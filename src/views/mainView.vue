@@ -1,32 +1,38 @@
 <template>
   <div class="main">
-    <svg
-      class="map"
-      width="1300"
-      viewBox="-43 0 55 69.5"
-      version="1.1"
-      id="map"
-      xmlns="http://www.w3.org/2000/svg"
-      xmlns:svg="http://www.w3.org/2000/svg"
-      data-type-object="map"
-      @click="clickSVG"
-      @mouseover="mouseoverSVG">
-        <region-item v-for="(region, i) in regionItemsOnMap" :region_info="region" :key="i+1" :numberRegion="i+1" :transform="giveTranslateAttr(i+1)"/>
-    </svg>
-    <the-help-block />
+    <!-- TODO: до выравнивания базового бэка скрыто -->
+    <template v-if="$store.state.stage == 'readyToGame'">
+      <svg
+        class="map"
+        width="1300"
+        viewBox="-43 0 55 69.5"
+        version="1.1"
+        id="map"
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:svg="http://www.w3.org/2000/svg"
+        data-type-object="map"
+        @click="clickSVG"
+        @mouseover="mouseoverSVG">
+          <region-item v-for="(region, i) in regionItemsOnMap" :region_info="region" :key="i+1" :numberRegion="i+1" :transform="giveTranslateAttr(i+1)"/>
+      </svg>
+      <the-help-block />
+    </template>
+    <joinModal v-else/>
   </div>
 </template>
 
 <script>
 import regionItem from '@/components/onMap/regionItem.vue'
 import TheHelpBlock from '@/components/TheHelpBlock.vue'
+import joinModal from './joinModal.vue'
 import { mapState, mapGetters } from 'vuex'
 
 export default {
   name: 'mainView',
   components: {
     regionItem,
-    TheHelpBlock
+    TheHelpBlock,
+    joinModal
   },
   data () {
     return {
@@ -41,11 +47,11 @@ export default {
   },
   created () {
     if (this.stage === 'beforeStart') { this.$store.commit('updateStage', 'start') }
-    this.$store.commit('updateLayoutByCount', this.layoutByCountGamers[this.currentCountGamers])
-    this.fillInfoAboutRegions()
   },
   mounted () {
-    this.$store.commit('updateStage', 'MOVING_waitingSelection')
+    // TODO: скрыто до выравнивания бэка
+    // this.$store.commit('updateStage', 'MOVING_waitingSelection') отладочное
+    // this.loadPlayers()
   },
   methods: {
     fillInfoAboutRegions () {
@@ -163,7 +169,8 @@ export default {
       console.log(oldValue + ' > ' + newValue)
       if (newValue === 'start') {
         // если цвета выбраны заранее - значит это тестовый режим, перепрыгиваем этап
-        if (this.opponents.player.color === undefined) { this.$store.commit('updateStage', 'changeColor') } else { this.$store.commit('updateStage', 'colorChanged') }
+        // TODO: скрыто для остановки документооборота, вероятно потом всё это будет перенесено на бэк
+        // if (this.opponents.player.color === undefined) { this.$store.commit('updateStage', 'changeColor') } else { this.$store.commit('updateStage', 'colorChanged') }
       }
       if (newValue === 'changeColor') {
         this.suggestColorChoice()
@@ -176,6 +183,11 @@ export default {
         this.changeFirstPlayer()
       }
       if (newValue === 'firstPlayerChanged') { this.$store.commit('updateStage', 'readyToGame') }
+      if (newValue === 'readyToGame') {
+        // Хоть и добавлено сейчас, но потом частично или полностью тоже будет перенесено на бэк(в части расчётов)
+        this.$store.commit('updateLayoutByCount', this.layoutByCountGamers[this.currentCountGamers])
+        this.fillInfoAboutRegions()
+      }
     },
     SELECTED_UNITS: function (newValue) {
       // если всё выделение снято - сбросить точку сбора
