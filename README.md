@@ -11,10 +11,11 @@ install PHP 8+
 ## Database setup
 1. Create MySQL database
 2. Update connection settings in `api/.env.local` file:
-DB_HOST=localhost
-DB_NAME=your_database_name
-DB_USER=your_username
-DB_PASSWORD=your_password
+<br>DB_HOST=localhost
+<br>DB_NAME=your_database_name
+<br>DB_USER=your_username
+<br>DB_PASSWORD=your_password
+<!-- TODO: добавить схему данных -->
 
 ### Compiles and hot-reloads for development(front)
 ```
