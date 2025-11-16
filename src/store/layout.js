@@ -86,81 +86,81 @@ const layout = () => {
       }
     ],
     units: [
-      {
-        id: 1,
-        type: 'settler',
-        alive: true,
-        died_in_battle: false,
-        founded_the_city: false,
-        region: 8,
-        tile: 3,
-        owner: 'player',
-        selected: false,
-        canMove_onThisAction: true,
-        canMove_onThisRound: true
-      },
-      {
-        id: 2,
-        type: 'settler',
-        alive: true,
-        died_in_battle: false,
-        founded_the_city: false,
-        region: 8,
-        tile: 3,
-        owner: 'player',
-        selected: false,
-        canMove_onThisAction: true,
-        canMove_onThisRound: true
-      },
-      {
-        id: 3,
-        type: 'settler',
-        alive: true,
-        died_in_battle: false,
-        founded_the_city: false,
-        region: 1,
-        tile: 4,
-        owner: 'AI',
-        selected: false,
-        canMove_onThisAction: true,
-        canMove_onThisRound: true
-      },
-      {
-        id: 4,
-        type: 'infantry',
-        alive: true,
-        region: 10,
-        tile: 1,
-        owner: 'player',
-        selected: false,
-        canMove_onThisAction: true,
-        canMove_onThisRound: true,
-        canAttack: true
-      },
-      {
-        id: 5,
-        type: 'ship',
-        alive: true,
-        region: 8,
-        tile: 3,
-        owner: 'player',
-        selected: false,
-        canMove_onThisAction: true,
-        canMove_onThisRound: true,
-        canAttack: true
-      },
-      {
-        id: 10,
-        type: 'ship',
-        alive: true,
-        region: 8,
-        tile: 3,
-        owner: 'player',
-        selected: false,
-        canMove_onThisAction: true,
-        canMove_onThisRound: true,
-        canAttack: true
-      },
+      // {
+      //   id: 1,
+      //   type: 'settler',
+      //   alive: true,
+      //   died_in_battle: false,
+      //   founded_the_city: false,
+      //   region: 8,
+      //   tile: 3,
+      //   owner: 'player',
+      //   selected: false,
+      //   canMove_onThisAction: true,
+      //   canMove_onThisRound: true
+      // },
+      // {
+      //   id: 2,
+      //   type: 'settler',
+      //   alive: true,
+      //   died_in_battle: false,
+      //   founded_the_city: false,
+      //   region: 8,
+      //   tile: 3,
+      //   owner: 'player',
+      //   selected: false,
+      //   canMove_onThisAction: true,
+      //   canMove_onThisRound: true
+      // }
+      // {
+      //   id: 3,
+      //   type: 'settler',
+      //   alive: true,
+      //   died_in_battle: false,
+      //   founded_the_city: false,
+      //   region: 1,
+      //   tile: 4,
+      //   owner: 'AI',
+      //   selected: false,
+      //   canMove_onThisAction: true,
+      //   canMove_onThisRound: true
+      // },
+      // {
+      //   id: 4,
+      //   type: 'infantry',
+      //   alive: true,
+      //   region: 10,
+      //   tile: 1,
+      //   owner: 'player',
+      //   selected: false,
+      //   canMove_onThisAction: true,
+      //   canMove_onThisRound: true,
+      //   canAttack: true
+      // },
+      // {
+      //   id: 5,
+      //   type: 'ship',
+      //   alive: true,
+      //   region: 8,
+      //   tile: 3,
+      //   owner: 'player',
+      //   selected: false,
+      //   canMove_onThisAction: true,
+      //   canMove_onThisRound: true,
+      //   canAttack: true
+      // },
+      // {
+      //   id: 10,
+      //   type: 'ship',
+      //   alive: true,
+      //   region: 8,
+      //   tile: 3,
+      //   owner: 'player',
+      //   selected: false,
+      //   canMove_onThisAction: true,
+      //   canMove_onThisRound: true,
+      //   canAttack: true
+      // },
       // {
       //   id: 11,
       //   type: 'ship',
@@ -185,30 +185,30 @@ const layout = () => {
       //   canMove_onThisRound: true,
       //   canAttack: true
       // },
-      {
-        id: 9,
-        type: 'infantry',
-        alive: true,
-        region: 10,
-        tile: 2,
-        owner: 'player',
-        selected: false,
-        canMove_onThisAction: true,
-        canMove_onThisRound: true,
-        canAttack: true
-      },
-      {
-        id: 6,
-        type: 'infantry',
-        alive: true,
-        region: 1,
-        tile: 4,
-        owner: 'AI',
-        selected: false,
-        canMove_onThisAction: true,
-        canMove_onThisRound: true,
-        canAttack: true
-      }
+      // {
+      //   id: 9,
+      //   type: 'infantry',
+      //   alive: true,
+      //   region: 10,
+      //   tile: 2,
+      //   owner: 'player',
+      //   selected: false,
+      //   canMove_onThisAction: true,
+      //   canMove_onThisRound: true,
+      //   canAttack: true
+      // },
+      // {
+      //   id: 6,
+      //   type: 'infantry',
+      //   alive: true,
+      //   region: 1,
+      //   tile: 4,
+      //   owner: 'AI',
+      //   selected: false,
+      //   canMove_onThisAction: true,
+      //   canMove_onThisRound: true,
+      //   canAttack: true
+      // }
       // {
       //   id: 7,
       //   type: 'ship',

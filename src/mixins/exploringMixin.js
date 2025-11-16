@@ -8,6 +8,7 @@ export default {
       // выбираем случайный регион из невыложенных
       const uniqRegionsOnMap = [...new Set(this.regionItemsOnMap.map(function (region) { return region.region_type }))]
       const lostTypesOfRegion = []
+      // for (let i = 13; i <= 13; i++) { // тестить можно на 8, 13 и 15
       for (let i = 5; i <= 20; i++) {
         if (!uniqRegionsOnMap.includes(i)) { lostTypesOfRegion.push(i) }
       }

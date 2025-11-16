@@ -55,6 +55,16 @@ export default {
         // Заполнение стартовых тайлов на 2 игроков
         if (i === this.layoutByCount.regionsForStart[0]) { filler.region_type = 1 }
         if (i === this.layoutByCount.regionsForStart[1]) { filler.region_type = 1; filler.orientation = 'revers' }
+        // отладочное
+        // if (i === 8) { filler.region_type = 7; filler.orientation = 'avers' }
+        // if (i === 7) { filler.region_type = 6; filler.orientation = 'revers' }
+        // if (i === 5) { filler.region_type = 5; filler.orientation = 'revers' }
+        // проверка сложного limitless
+        // if (i === 4) { filler.region_type = 8; filler.orientation = 'avers' }
+        // if (i === 5) { filler.region_type = 7; filler.orientation = 'avers' }
+        // if (i === 6) { filler.region_type = 12; filler.orientation = 'avers' }
+        // if (i === 8) { filler.region_type = 5; filler.orientation = 'avers' }
+        // if (i === 9) { filler.region_type = 16; filler.orientation = 'avers' }
 
         this.$store.commit('updateRegionInfo', { regionNum: i, info: filler })
       }
