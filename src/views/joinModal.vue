@@ -1,26 +1,26 @@
 <template>
-  <!-- TODO: человеко-читаемые поля, запрет пустых значений, переадресация на комнату после создания, логика кнопок для нескольких игроков ("Присоединиться", если ты не создатель), взаимодействие до начала игры(счётчик игроков) -->
+  <!-- TODO: переадресация на комнату после создания, логика кнопок для нескольких игроков ("Присоединиться", если ты не создатель), взаимодействие до начала игры(счётчик игроков) -->
    <!-- На будущее: выбор цвета визуальный и немного украшательств -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
     <div>
-        <label for="session_name">session_name:</label><br>
+        <label for="session_name">Название игры:</label><br>
         <input type="text" v-model="session_name"><br>
-        <label for="nickname">nickname:</label><br>
+        <label for="nickname">Никнейм:</label><br>
         <input type="text" id="nickname" v-model="nickname"><br>
-        <label for="faction">faction:</label><br>
+        <label for="faction">Фракция:</label><br>
         <select v-model="faction_id">
           <option v-for="item in factions" :key="item.id" :value="item.id">
             {{ item.name }}
           </option>
         </select><br>
-        <label for="color">color:</label><br>
+        <label for="color">Цвет на поле:</label><br>
         <select v-model="color_id">
           <option v-for="item in colors" :key="item.id" :value="item.id">
             {{ item.name }}
           </option>
         </select><br><br>
 
-        <button @click="createRoom">Создать комнату</button>
+        <button @click="createRoom" :disabled="cantCreateRoom">Создать комнату</button>
     </div>
 </template>
 
@@ -40,6 +40,11 @@ export default {
   mounted () {
     this.getFreeFactions()
     this.getFreeColors()
+  },
+  computed: {
+    cantCreateRoom () {
+      return !(this.session_name && this.nickname && this.faction_id && this.color_id)
+    }
   },
   methods: {
     async getFreeFactions () {
