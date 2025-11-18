@@ -1,5 +1,5 @@
 <template>
-  <!-- TODO: переадресация на комнату после создания, логика кнопок для нескольких игроков ("Присоединиться", если ты не создатель), взаимодействие до начала игры(счётчик игроков) -->
+  <!-- TODO: выключение редактируемых полей, если игра уже создана(по id определять, делать запрос), логика кнопок для нескольких игроков ("Присоединиться", если ты не создатель), взаимодействие до начала игры(счётчик игроков) -->
    <!-- На будущее: выбор цвета визуальный и немного украшательств -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
     <div>
@@ -21,6 +21,11 @@
         </select><br><br>
 
         <button @click="createRoom" :disabled="cantCreateRoom">Создать комнату</button>
+        <div v-if="this.redirect_url">
+          Ссылка для приглашения друзей =>
+          <button @click="copyToClipboardUrl" style="height: 1.5rem">📋 скопировать</button>
+        </div>
+
     </div>
 </template>
 
@@ -34,7 +39,8 @@ export default {
       factions: [],
       faction_id: '',
       colors: [],
-      color_id: ''
+      color_id: '',
+      redirect_url: ''
     }
   },
   mounted () {
@@ -47,6 +53,9 @@ export default {
     }
   },
   methods: {
+    copyToClipboardUrl () {
+      navigator.clipboard.writeText(this.redirect_url)
+    },
     async getFreeFactions () {
       try {
         const res = await fetch('/api/startGame/getFreeFactions')
@@ -67,9 +76,9 @@ export default {
     },
     async createRoom () {
       try {
-        const sessionRes = await fetch('/api/startGame/CreateSession?session_name=' + this.session_name + '&nickname=' + this.nickname + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
-        const session = await sessionRes.json()
-        console.log('Сессия:', session)
+        const res = await fetch('/api/startGame/CreateSession?session_name=' + this.session_name + '&nickname=' + this.nickname + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
+        const data = await res.json()
+        this.redirect_url = window.location.origin + data.result.redirect_url
       } catch (error) {
         console.error('Ошибка:', error)
       }

@@ -4,10 +4,16 @@ import mainView from '../views/mainView.vue'
 
 Vue.use(VueRouter)
 
+// TODO: подумать про разводку страницы создания комнаты и игры
 const routes = [
   {
     path: '/',
-    name: 'home',
+    name: 'main',
+    component: mainView
+  },
+  {
+    path: '/game/:id',
+    name: 'game',
     component: mainView
   },
   {
@@ -21,6 +27,7 @@ const routes = [
 ]
 
 const router = new VueRouter({
+  mode: 'history',
   routes
 })
 
