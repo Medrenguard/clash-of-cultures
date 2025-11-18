@@ -1,4 +1,5 @@
 <?php
+// TODO: добавить защиты для входных значений
 // TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE
 if (strpos($path, '/startGame/CreateSession') !== false) {
     createSession();
