@@ -45,7 +45,7 @@ function createSession() {
     return $res;
 }
 
-function __createSession($data) {
+function __createSession($data = []) {
     $res = ['error' => null, 'result' => null];
     try {
         global $pdo;
@@ -73,7 +73,7 @@ function __createSession($data) {
     }
     return $res;
 }
-function __createSessionPlayer($data) {
+function __createSessionPlayer($data = []) {
     $res = ['error' => null, 'result' => null];
     try {
         global $pdo;
