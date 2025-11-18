@@ -1,5 +1,4 @@
 <?php
-// TODO: эта конструкция catch не все ошибки ловит, к сожалению, нужно подумать
 // TODO: добавить защиту от иньекций
 if (strpos($path, '/startGame/CreateSession') !== false) {
     createSession();
@@ -17,22 +16,20 @@ function createSession() {
     $res = ['error' => null, 'result' => null];
     try {
         $nickname = $_GET['nickname'];
-        $faction_id = $_GET['faction_id'];
-        $color_id = $_GET['color_id'];
+        $factionId = $_GET['faction_id'];
+        $colorId = $_GET['color_id'];
         $sessionName = $_GET['session_name'];
-        if (empty($nickname) || empty($sessionName) || empty($faction_id) || empty($color_id))
+        if (empty($nickname) || empty($sessionName) || empty($factionId) || empty($colorId))
         {
             throw new Exception("Wrong param", 1);
         }
 
-        // создаём сессию с невыводом echo
-        $newSession = __createSession(false);
+        $newSession = __createSession();
         if (empty($newSession['result']))
         {
             throw new Exception("Error create session", 1);
         }
-        // создаём игрока с невыводом echo
-        $newSessionPlayer = __createSessionPlayer($newSession['result']['session_id'], 1, false);
+        $newSessionPlayer = __createSessionPlayer(['session_id' => $newSession['result']['session_id'], 'is_creator' => 1], 1);
 
         $res['result'] = [
             'session_id' => $newSession['result']['session_id'], 
@@ -47,10 +44,12 @@ function createSession() {
     return $res;
 }
 
-function __createSession($echo_result = true) {
+function __createSession($data) {
     $res = ['error' => null, 'result' => null];
     try {
         global $pdo;
+        // параметр, который нужно прокинуть для отладки
+        $echo = $data['echo'] ?? false;
         $sessionName = $_GET['session_name'];
         if (empty($sessionName))
         {
@@ -68,32 +67,36 @@ function __createSession($echo_result = true) {
     catch(Exception $ex) {
         $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
     }
-    if ($echo_result) {
+    if ($echo) {
         echo json_encode($res);
     }
     return $res;
 }
-function __createSessionPlayer($sessionId, $isCreator, $echo_result = true) {
+function __createSessionPlayer($data) {
     $res = ['error' => null, 'result' => null];
     try {
         global $pdo;
+        // параметр, который нужно прокинуть для отладки
+        $echo = $data['echo'] ?? false;
+        $sessionId = $data['session_id'];
+        $isCreator = $data['is_creator'] ?? 0;
         $nickname = $_GET['nickname'];
-        $faction_id = $_GET['faction_id'];
-        $color_id = $_GET['color_id'];
-        if (empty($nickname) || empty($sessionId) || empty($faction_id) || empty($color_id))
+        $factionId = $_GET['faction_id'];
+        $colorId = $_GET['color_id'];
+        if (empty($nickname) || empty($sessionId) || empty($factionId) || empty($colorId) || empty($isCreator))
         {
             throw new Exception("Wrong param", 1);
         }
         
         $stmt = $pdo->prepare("insert into session_players(name, session_id, color_id, faction_id, is_creator) values(?, ?, ?, ?, ?)");
-        $stmt->execute([$nickname, $sessionId, $color_id, $faction_id, $isCreator]);
+        $stmt->execute([$nickname, $sessionId, $colorId, $factionId, $isCreator]);
         $playerId = $pdo->lastInsertId();
         $res['result'] = $playerId;
     }
     catch(Exception $ex) {
         $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
     }
-    if ($echo_result) {
+    if ($echo) {
         echo json_encode($res);
     }
     return $res;
@@ -102,7 +105,6 @@ function getFreeFactions() {
     $res = ['error' => null, 'result' => []];
     try {
         global $pdo;
-        
         $stmt = $pdo->prepare("select * from factions");
         $stmt->execute();
         $factions = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -118,7 +120,6 @@ function getFreeColors() {
     $res = ['error' => null, 'result' => []];
     try {
         global $pdo;
-        
         $stmt = $pdo->prepare("select * from colors");
         $stmt->execute();
         $colors = $stmt->fetchAll(PDO::FETCH_ASSOC);
