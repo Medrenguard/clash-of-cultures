@@ -1,5 +1,5 @@
 <?php
-// TODO: добавить защиту от иньекций
+// TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE
 if (strpos($path, '/startGame/CreateSession') !== false) {
     createSession();
 } elseif (strpos($path, '/startGame/getFreeFactions') !== false) {
@@ -15,10 +15,10 @@ if (strpos($path, '/startGame/CreateSession') !== false) {
 function createSession() {
     $res = ['error' => null, 'result' => null];
     try {
-        $nickname = $_GET['nickname'];
-        $factionId = $_GET['faction_id'];
-        $colorId = $_GET['color_id'];
-        $sessionName = $_GET['session_name'];
+        $nickname = trim($_GET['nickname']);
+        $factionId = trim($_GET['faction_id']);
+        $colorId = trim($_GET['color_id']);
+        $sessionName = trim($_GET['session_name']);
         if (empty($nickname) || empty($sessionName) || empty($factionId) || empty($colorId))
         {
             throw new Exception("Wrong param", 1);
@@ -50,7 +50,7 @@ function __createSession($data) {
         global $pdo;
         // параметр, который нужно прокинуть для отладки
         $echo = $data['echo'] ?? false;
-        $sessionName = $_GET['session_name'];
+        $sessionName = trim($_GET['session_name']);
         if (empty($sessionName))
         {
             throw new Exception("Wrong param", 1);
@@ -80,9 +80,9 @@ function __createSessionPlayer($data) {
         $echo = $data['echo'] ?? false;
         $sessionId = $data['session_id'];
         $isCreator = $data['is_creator'] ?? 0;
-        $nickname = $_GET['nickname'];
-        $factionId = $_GET['faction_id'];
-        $colorId = $_GET['color_id'];
+        $nickname = trim($_GET['nickname']);
+        $factionId = trim($_GET['faction_id']);
+        $colorId = trim($_GET['color_id']);
         if (empty($nickname) || empty($sessionId) || empty($factionId) || empty($colorId) || empty($isCreator))
         {
             throw new Exception("Wrong param", 1);
