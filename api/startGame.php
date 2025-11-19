@@ -9,6 +9,28 @@ if (function_exists(explode('/', $path)[2])) {
     echo json_encode(['error' => 'Function/route not found']);
 }
 
+function getSession() {
+    $res = ['error' => null, 'result' => null];
+    try {
+        global $pdo;
+        $sessionId = trim($_GET['session_id']);
+        if (empty($sessionId) || !ctype_digit($sessionId))
+        {
+            throw new Exception("Wrong param", 1);
+        }
+
+        $stmt = $pdo->prepare("select name from sessions where id = ? limit 1");
+        $stmt->execute([$sessionId]);
+        $sessionName = $stmt->fetch(PDO::FETCH_ASSOC);
+        $res['result'] = $sessionName;
+    }
+    catch(Exception $ex) {
+        $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
+    }
+    echo json_encode($res);
+    return $res;
+}
+
 function createSession() {
     $res = ['error' => null, 'result' => null];
     try {
@@ -26,35 +48,13 @@ function createSession() {
         {
             throw new Exception("Error create session", 1);
         }
-        $newSessionPlayer = __createSessionPlayer(['session_id' => $newSession['result']['session_id'], 'is_creator' => 1], 1);
+        $newSessionPlayer = __createSessionPlayer(['session_id' => $newSession['result']['session_id'], 'is_creator' => 1]);
 
         $res['result'] = [
             'session_id' => $newSession['result']['session_id'], 
             'redirect_url' => '/game/' . $newSession['result']['session_id'],
             'player_id' => $newSessionPlayer['result']
         ];
-    }
-    catch(Exception $ex) {
-        $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
-    }
-    echo json_encode($res);
-    return $res;
-}
-
-function getSession() {
-    $res = ['error' => null, 'result' => null];
-    try {
-        global $pdo;
-        $sessionId = trim($_GET['session_id']);
-        if (empty($sessionId) || !ctype_digit($sessionId))
-        {
-            throw new Exception("Wrong param", 1);
-        }
-
-        $stmt = $pdo->prepare("select name from sessions where id = ? limit 1");
-        $stmt->execute([$sessionId]);
-        $sessionName = $stmt->fetch(PDO::FETCH_ASSOC);
-        $res['result'] = $sessionName;
     }
     catch(Exception $ex) {
         $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
