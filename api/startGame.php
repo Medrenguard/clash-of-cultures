@@ -3,6 +3,8 @@
 // TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE
 if (strpos($path, '/startGame/CreateSession') !== false) {
     createSession();
+} elseif (strpos($path, '/startGame/getSession') !== false) {
+    getSession();
 } elseif (strpos($path, '/startGame/getFreeFactions') !== false) {
     getFreeFactions();
 } elseif (strpos($path, '/startGame/getFreeColors') !== false) {
@@ -37,6 +39,28 @@ function createSession() {
             'redirect_url' => '/game/' . $newSession['result']['session_id'],
             'player_id' => $newSessionPlayer['result']
         ];
+    }
+    catch(Exception $ex) {
+        $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
+    }
+    echo json_encode($res);
+    return $res;
+}
+
+function getSession() {
+    $res = ['error' => null, 'result' => null];
+    try {
+        global $pdo;
+        $sessionId = trim($_GET['session_id']);
+        if (empty($sessionId) || !ctype_digit($sessionId))
+        {
+            throw new Exception("Wrong param", 1);
+        }
+
+        $stmt = $pdo->prepare("select name from sessions where id = ? limit 1");
+        $stmt->execute([$sessionId]);
+        $sessionName = $stmt->fetch(PDO::FETCH_ASSOC);
+        $res['result'] = $sessionName;
     }
     catch(Exception $ex) {
         $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
@@ -102,12 +126,27 @@ function __createSessionPlayer($data = []) {
     }
     return $res;
 }
+
 function getFreeFactions() {
     $res = ['error' => null, 'result' => []];
     try {
         global $pdo;
-        $stmt = $pdo->prepare("select * from factions");
-        $stmt->execute();
+        $sessionId = trim($_GET['session_id'] ?? 0);
+        if (!ctype_digit($sessionId))
+        {
+            throw new Exception("Wrong param", 1);
+        }
+
+        $stmt = $pdo->prepare("
+            select 
+                fs.*
+            from factions fs
+            left join session_players sp on sp.faction_id = fs.id
+                and sp.session_id = ?
+            where sp.faction_id is null
+            order by fs.id
+        ");
+        $stmt->execute([$sessionId]);
         $factions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $res['result'] = $factions;
     }
@@ -117,12 +156,26 @@ function getFreeFactions() {
     echo json_encode($res);
     return $res;
 }
+
 function getFreeColors() {
     $res = ['error' => null, 'result' => []];
     try {
         global $pdo;
-        $stmt = $pdo->prepare("select * from colors");
-        $stmt->execute();
+        $sessionId = trim($_GET['session_id'] ?? 0);
+        if (!ctype_digit($sessionId))
+        {
+            throw new Exception("Wrong param", 1);
+        }
+        $stmt = $pdo->prepare("
+        select 
+            cs.*
+        from colors cs
+        left join session_players sp on sp.faction_id = cs.id
+            and sp.session_id = ?
+        where sp.faction_id is null
+        order by cs.id
+        ");
+        $stmt->execute([$sessionId]);
         $colors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $res['result'] = $colors;
     }
