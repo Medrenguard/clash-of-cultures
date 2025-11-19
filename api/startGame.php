@@ -1,14 +1,8 @@
 <?php
 // TODO: добавить защиты для входных значений
 // TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE
-if (strpos($path, '/startGame/CreateSession') !== false) {
-    createSession();
-} elseif (strpos($path, '/startGame/getSession') !== false) {
-    getSession();
-} elseif (strpos($path, '/startGame/getFreeFactions') !== false) {
-    getFreeFactions();
-} elseif (strpos($path, '/startGame/getFreeColors') !== false) {
-    getFreeColors();
+if (function_exists(explode('/', $path)[2])) {
+    call_user_func(explode('/', $path)[2]);
 } else {
     // 404 - маршрут не найден
     http_response_code(404);
