@@ -91,6 +91,29 @@ function __createSession($data = []) {
     }
     return $res;
 }
+
+function createSessionPlayer() {
+    $res = ['error' => null, 'result' => null];
+    try {
+        $sessionId = trim($_GET['session_id']);
+        $nickname = trim($_GET['nickname']);
+        $factionId = trim($_GET['faction_id']);
+        $colorId = trim($_GET['color_id']);
+        if (empty($nickname) || empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
+        {
+            throw new Exception("Wrong param", 1);
+        }
+
+        $newSessionPlayer = __createSessionPlayer(['session_id' => $sessionId, 'is_creator' => 0]);
+        $res['result'] = $newSessionPlayer;
+    }
+    catch(Exception $ex) {
+        $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
+    }
+    echo json_encode($res);
+    return $res;
+}
+
 function __createSessionPlayer($data = []) {
     $res = ['error' => null, 'result' => null];
     try {
@@ -102,7 +125,7 @@ function __createSessionPlayer($data = []) {
         $nickname = trim($_GET['nickname']);
         $factionId = trim($_GET['faction_id']);
         $colorId = trim($_GET['color_id']);
-        if (empty($nickname) || empty($sessionId) || empty($factionId) || empty($colorId) || empty($isCreator))
+        if (empty($nickname) || empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
         {
             throw new Exception("Wrong param", 1);
         }
