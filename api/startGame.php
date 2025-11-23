@@ -210,9 +210,9 @@ function getFreeColors() {
         select 
             cs.*
         from colors cs
-        left join session_players sp on sp.faction_id = cs.id
+        left join session_players sp on sp.color_id = cs.id
             and sp.session_id = ?
-        where sp.faction_id is null
+        where sp.color_id is null
         order by cs.id
         ");
         $stmt->execute([$sessionId]);
