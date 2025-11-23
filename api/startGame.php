@@ -16,7 +16,7 @@ function getSessionInfo() {
         $sessionId = trim($_GET['session_id']);
         if (empty($sessionId) || !ctype_digit($sessionId))
         {
-            throw new Exception("Wrong param", 1);
+            throw new Exception("wrong_param", 1);
         }
 
         $stmt = $pdo->prepare("
@@ -35,6 +35,7 @@ function getSessionInfo() {
         ");
         $stmt->execute([$sessionId]);
         $sessionInfo = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        If (count($sessionInfo) == 0) throw new Exception("game_not_found", 1);
         $res['result']['name'] = $sessionInfo[0]['name'];
         $players = [];
         foreach ($sessionInfo as $row) {
@@ -63,13 +64,13 @@ function createSession() {
         $sessionName = trim($_GET['session_name']);
         if (empty($nickname) || empty($sessionName) || empty($factionId) || empty($colorId))
         {
-            throw new Exception("Wrong param", 1);
+            throw new Exception("wrong_param", 1);
         }
 
         $newSession = __createSession();
         if (empty($newSession['result']))
         {
-            throw new Exception("Error create session", 1);
+            throw new Exception("error_create_session", 1);
         }
         $newSessionPlayer = __createSessionPlayer(['session_id' => $newSession['result']['session_id'], 'is_creator' => 1]);
 
@@ -95,7 +96,7 @@ function __createSession($data = []) {
         $sessionName = trim($_GET['session_name']);
         if (empty($sessionName))
         {
-            throw new Exception("Wrong param", 1);
+            throw new Exception("wrong_param", 1);
         }
 
         $stmt = $pdo->prepare("insert into sessions(name) values(?)");
@@ -124,7 +125,7 @@ function createSessionPlayer() {
         $colorId = trim($_GET['color_id']);
         if (empty($nickname) || empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
         {
-            throw new Exception("Wrong param", 1);
+            throw new Exception("wrong_param", 1);
         }
 
         $newSessionPlayer = __createSessionPlayer(['session_id' => $sessionId, 'is_creator' => 0]);
@@ -150,7 +151,7 @@ function __createSessionPlayer($data = []) {
         $colorId = trim($_GET['color_id']);
         if (empty($nickname) || empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
         {
-            throw new Exception("Wrong param", 1);
+            throw new Exception("wrong_param", 1);
         }
         
         $stmt = $pdo->prepare("insert into session_players(name, session_id, color_id, faction_id, is_creator) values(?, ?, ?, ?, ?)");
@@ -174,7 +175,7 @@ function getFreeFactions() {
         $sessionId = trim($_GET['session_id'] ?? 0);
         if (!ctype_digit($sessionId))
         {
-            throw new Exception("Wrong param", 1);
+            throw new Exception("wrong_param", 1);
         }
 
         $stmt = $pdo->prepare("
@@ -204,7 +205,7 @@ function getFreeColors() {
         $sessionId = trim($_GET['session_id'] ?? 0);
         if (!ctype_digit($sessionId))
         {
-            throw new Exception("Wrong param", 1);
+            throw new Exception("wrong_param", 1);
         }
         $stmt = $pdo->prepare("
         select 

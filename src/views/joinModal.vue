@@ -80,8 +80,12 @@ export default {
       try {
         const res = await fetch('/api/startGame/getSessionInfo?session_id=' + this.$route.params.id)
         const data = await res.json()
-        this.session_name = data.result.name
-        this.session_players = data.result.players
+        if (data.error.message === 'game_not_found') {
+          window.location.href = window.location.origin
+        } else {
+          this.session_name = data.result.name
+          this.session_players = data.result.players
+        }
       } catch (error) {
         console.error('Ошибка:', error)
       }
