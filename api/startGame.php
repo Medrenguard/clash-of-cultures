@@ -9,8 +9,8 @@ if (function_exists(explode('/', $path)[2])) {
     echo json_encode(['error' => 'Function/route not found']);
 }
 
-function getSession() {
-    $res = ['error' => null, 'result' => null];
+function getSessionInfo() {
+    $res = ['error' => null, 'result' => ['name' => null, 'players' => []]];
     try {
         global $pdo;
         $sessionId = trim($_GET['session_id']);
@@ -19,10 +19,33 @@ function getSession() {
             throw new Exception("Wrong param", 1);
         }
 
-        $stmt = $pdo->prepare("select name from sessions where id = ? limit 1");
+        $stmt = $pdo->prepare("
+        select 
+            ss.name
+            ,sps.id 'player_id'
+            ,sps.name 'player_name'
+            ,sps.ready_for_start
+            ,fs.name 'faction_name'
+            ,cs.code 'color_code'
+        from sessions ss
+        join session_players sps on sps.session_id = ss.id
+        join factions fs on fs.id = sps.faction_id
+        join colors cs on cs.id = sps.color_id
+        where ss.id = ?
+        ");
         $stmt->execute([$sessionId]);
-        $sessionName = $stmt->fetch(PDO::FETCH_ASSOC);
-        $res['result'] = $sessionName;
+        $sessionInfo = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $res['result']['name'] = $sessionInfo[0]['name'];
+        $players = [];
+        foreach ($sessionInfo as $row) {
+            $res['result']['players'][] = [
+                'id' => $row['player_id'],
+                'name' => $row['player_name'],
+                'ready_for_start' => $row['ready_for_start'],
+                'faction_name' => $row['faction_name'],
+                'color_code' => $row['color_code']
+            ];
+        }
     }
     catch(Exception $ex) {
         $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];

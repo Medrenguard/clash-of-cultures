@@ -1,8 +1,8 @@
 <template>
-  <!-- TODO: сделать кнопку готовности для гостя(и функцию простановки её), кнопку начала игры(и функцию на бэке) -->
-   <!-- Счётчик игроков, их имена, статус готовности, фракция -->
+  <!-- TODO: сделать кнопку готовности для гостя(и функцию простановки её), кнопку начала игры(и функцию на бэке), автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника -->
    <!-- Сделать блокировку никнейма/фракции/цвета, когда всё выбрано(временно, или возможно обновлять свой выбор) -->
-   <!-- На будущее: выбор цвета визуальный и немного украшательств -->
+   <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
+   <!-- На будущее: формочка визуально красивая -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
     <div>
         <label for="session_name">Название игры:</label><br>
@@ -23,6 +23,12 @@
             {{ item.name }}
           </option>
         </select><br><br>
+        <div>
+          Уже на поле({{ session_players.length }}/ 4):
+          <div v-for="player in session_players" :key="player.id">
+            {{ player.name }} - {{ player.faction_name }} - {{ player.color_code }}. Готовность - {{ player.ready_for_start }}
+          </div>
+        </div><br><br>
 
         <button v-if="!iAmInRoom" @click="createRoom" :disabled="cantJoinToRoom">Создать комнату</button>
         <button v-else @click="JoinToRoom" :disabled="cantJoinToRoom">Присоединиться</button>
@@ -40,6 +46,7 @@ export default {
   data () {
     return {
       session_name: '',
+      session_players: [],
       nickname: '',
       factions: [],
       faction_id: '',
@@ -51,7 +58,7 @@ export default {
   mounted () {
     if (this.iAmInRoom) {
       this.redirect_url = window.location.origin + this.$route.params.id
-      this.getSession()
+      this.getSessionInfo()
     }
     this.getFreeFactions()
     this.getFreeColors()
@@ -68,11 +75,12 @@ export default {
     copyToClipboardUrl () {
       navigator.clipboard.writeText(this.redirect_url)
     },
-    async getSession () {
+    async getSessionInfo () {
       try {
-        const res = await fetch('/api/startGame/getSession?session_id=' + this.$route.params.id)
+        const res = await fetch('/api/startGame/getSessionInfo?session_id=' + this.$route.params.id)
         const data = await res.json()
         this.session_name = data.result.name
+        this.session_players = data.result.players
       } catch (error) {
         console.error('Ошибка:', error)
       }
