@@ -23,7 +23,8 @@
             {{ item.name }}
           </option>
         </select><br><br>
-        <div>
+        <!-- TODO: пока прячется в комнате. Вообще надо здесь и оставить и делать переадресацию на комнату после связывания юзера через куки -->
+        <div v-if="iAmInRoom">
           Уже на поле({{ session_players.length }}/ 4):
           <div v-for="player in session_players" :key="player.id">
             {{ player.name }} - {{ player.faction_name }} - {{ player.color_code }}. Готовность - {{ player.ready_for_start }}
