@@ -37,7 +37,6 @@ function getSessionInfo() {
         $sessionInfo = $stmt->fetchAll(PDO::FETCH_ASSOC);
         If (count($sessionInfo) == 0) throw new Exception("game_not_found", 1);
         $res['result']['name'] = $sessionInfo[0]['name'];
-        $players = [];
         foreach ($sessionInfo as $row) {
             $res['result']['players'][] = [
                 'id' => $row['player_id'],
