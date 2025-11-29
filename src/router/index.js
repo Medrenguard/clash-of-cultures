@@ -1,20 +1,30 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import authStore from '@/store/auth'
 import mainView from '../views/mainView.vue'
+import authView from '../views/authView.vue'
 
 Vue.use(VueRouter)
 
 // TODO: подумать про разводку страницы создания комнаты и игры
 const routes = [
   {
+    path: '/auth',
+    name: 'auth',
+    component: authView,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     name: 'main',
-    component: mainView
+    component: mainView,
+    meta: { requiresAuth: true }
   },
   {
     path: '/game/:id',
     name: 'game',
-    component: mainView
+    component: mainView,
+    meta: { requiresAuth: true }
   },
   {
     path: '/about',
@@ -29,6 +39,20 @@ const routes = [
 const router = new VueRouter({
   mode: 'history',
   routes
+})
+
+// Глобальный хук для проверки авторизации
+router.beforeEach(async (to, from, next) => {
+  if (to.meta.requiresAuth && !authStore.state.authChecked) {
+    await authStore.dispatch('checkAuthStatus')
+  }
+  if (to.name !== 'auth' && to.meta.requiresAuth && !authStore.state.isAuthenticated) {
+    next('/auth')
+  } else if (to.name === 'auth' && authStore.state.isAuthenticated) {
+    next('/')
+  } else {
+    next()
+  }
 })
 
 export default router
