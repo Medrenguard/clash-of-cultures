@@ -6,7 +6,6 @@ import authView from '../views/authView.vue'
 
 Vue.use(VueRouter)
 
-// TODO: подумать про разводку страницы создания комнаты и игры
 const routes = [
   {
     path: '/auth',
