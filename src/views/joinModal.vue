@@ -1,7 +1,5 @@
 <template>
-<!-- Запретить повторное присоединение тем же юзером в игру -->
- <!-- TODO: сделать кнопку готовности для гостя(и функцию простановки её), кнопку начала игры(и функцию на бэке), автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника -->
-   <!-- Сделать блокировку фракции/цвета, когда всё выбрано -->
+ <!-- TODO: сделать функцию на бэке простановки готовности для гостя, кнопку начала игры для хоста(и функцию на бэке), автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника, ограничение присоединения к игре по достижению 4 игроков-->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
    <!-- На будущее: формочка визуально красивая -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
@@ -12,13 +10,13 @@
         <div v-else> {{ session_name }} </div>
         <br>
         <label for="faction">Фракция:</label><br>
-        <select v-model="faction_id">
+        <select v-model="faction_id" :disabled="meAsPlayer" >
           <option v-for="item in factions" :key="item.id" :value="item.id">
             {{ item.name }}
           </option>
         </select><br>
         <label>Цвет на поле:</label><br>
-        <select v-model="color_id">
+        <select v-model="color_id" :disabled="meAsPlayer">
           <option v-for="item in colors" :key="item.id" :value="item.id">
             {{ item.name }}
           </option>
@@ -32,7 +30,8 @@
         </div><br><br>
 
         <button v-if="!iAmInRoom" @click="createRoom" :disabled="cantJoinToRoom">Создать комнату</button>
-        <button v-else @click="JoinToRoom" :disabled="cantJoinToRoom">Присоединиться</button>
+        <button v-else-if="iAmInRoom && !meAsPlayer" @click="JoinToRoom" :disabled="cantJoinToRoom">Присоединиться</button>
+        <button v-else @click="iAmReady">Подтвердить готовность</button>
         <div v-if="this.redirect_url">
           Ссылка для приглашения друзей =>
           <button @click="copyToClipboardUrl" style="height: 1.5rem">📋 скопировать</button>
@@ -55,11 +54,11 @@ export default {
       redirect_url: ''
     }
   },
-  mounted () {
+  async mounted () {
     if (this.iAmInRoom) {
+      // TODO: перенести этот вызов на роут, чтобы делать переадресацию с несуществующей комнаты сразу, а не после задержки
+      await this.getSessionInfo()
       this.redirect_url = window.location.origin + this.$route.params.id
-      // TODO: перенести этот вызов на роут, чтобы делать переадресацию с несуществующей комнаты
-      this.getSessionInfo()
     }
     this.getFreeFactions()
     this.getFreeColors()
@@ -70,6 +69,9 @@ export default {
     },
     iAmInRoom () {
       return this.$route.name === 'game'
+    },
+    meAsPlayer () {
+      return this.session_players.find((el) => el.name === this.$authStore.state.username)
     }
   },
   methods: {
@@ -85,6 +87,10 @@ export default {
         } else {
           this.session_name = data.result.name
           this.session_players = data.result.players
+          if (this.meAsPlayer) {
+            this.faction_id = this.meAsPlayer.faction_id
+            this.color_id = this.meAsPlayer.color_id
+          }
         }
       } catch (error) {
         console.error('Ошибка:', error)
@@ -120,14 +126,18 @@ export default {
       }
     },
     async JoinToRoom () {
-      // TODO: возвращает id игрока, но пока никак не обрабатывается. Нужно где-то генерировать ключ или использовать сам этот id для того, чтобы игра узнавала тебя
+      // TODO: возвращает id игрока, но пока никак не обрабатывается. Возможно возвращать id не нужно
       try {
         // const res = await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
         await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
+        this.getSessionInfo()
         // const data = await res.json()
       } catch (error) {
         console.error('Ошибка:', error)
       }
+    },
+    iAmReady () {
+      // тут вызов бэка, проставляющий мне галочку готовности
     }
   }
 }

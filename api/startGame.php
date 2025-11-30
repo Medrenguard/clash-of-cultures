@@ -1,4 +1,5 @@
 <?php
+// TODO прежде всего перебросить признак создателя комнаты из плэйеров в комнату
 // TODO: добавить защиты для входных значений
 // TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE
 // TODO: возможно, вынести этот блок глобально(кроме auth.php)
@@ -48,7 +49,9 @@ function getSessionInfo() {
             ,sps.id 'player_id'
             ,us.username 'player_name'
             ,sps.ready_for_start
+            ,fs.id 'faction_id'
             ,fs.name 'faction_name'
+            ,cs.id 'color_id'
             ,cs.code 'color_code'
         from sessions ss
         join session_players sps on sps.session_id = ss.id
@@ -66,7 +69,9 @@ function getSessionInfo() {
                 'id' => $row['player_id'],
                 'name' => $row['player_name'],
                 'ready_for_start' => $row['ready_for_start'],
+                'faction_id' => $row['faction_id'],
                 'faction_name' => $row['faction_name'],
+                'color_id' => $row['color_id'],
                 'color_code' => $row['color_code']
             ];
         }
@@ -158,7 +163,9 @@ function createSessionPlayer() {
     echo json_encode($res);
     return $res;
 }
-
+// TODO: перед созданием проверить, что выбранная фракция и цвет всё еще доступны. Если нет - вернуть читаемую ошибку на фронт о том,
+// что фракция/цвет более недоступна и обновить там список
+// В теории можно оставить до подключения веб-сокетов 
 function __createSessionPlayer($data = []) {
     $res = ['error' => null, 'result' => null];
     try {
@@ -191,7 +198,7 @@ function __createSessionPlayer($data = []) {
 function getFreeFactions() {
     $res = ['error' => null, 'result' => []];
     try {
-        global $pdo;
+        global $pdo, $curuserId;
         $sessionId = trim($_GET['session_id'] ?? 0);
         if (!ctype_digit($sessionId))
         {
@@ -205,9 +212,10 @@ function getFreeFactions() {
             left join session_players sp on sp.faction_id = fs.id
                 and sp.session_id = ?
             where sp.faction_id is null
+                or sp.user_id = ?
             order by fs.id
         ");
-        $stmt->execute([$sessionId]);
+        $stmt->execute([$sessionId, $curuserId]);
         $factions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $res['result'] = $factions;
     }
@@ -221,22 +229,23 @@ function getFreeFactions() {
 function getFreeColors() {
     $res = ['error' => null, 'result' => []];
     try {
-        global $pdo;
+        global $pdo, $curuserId;
         $sessionId = trim($_GET['session_id'] ?? 0);
         if (!ctype_digit($sessionId))
         {
             throw new Exception("wrong_param", 1);
         }
         $stmt = $pdo->prepare("
-        select 
-            cs.*
-        from colors cs
-        left join session_players sp on sp.color_id = cs.id
-            and sp.session_id = ?
-        where sp.color_id is null
-        order by cs.id
+            select 
+                cs.*
+            from colors cs
+            left join session_players sp on sp.color_id = cs.id
+                and sp.session_id = ?
+            where sp.color_id is null
+                    or sp.user_id = ?
+            order by cs.id
         ");
-        $stmt->execute([$sessionId]);
+        $stmt->execute([$sessionId, $curuserId]);
         $colors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $res['result'] = $colors;
     }
