@@ -39,6 +39,19 @@ export default new Vuex.Store({
         throw error
       }
     },
+    async handleLogin ({ commit }, params) {
+      const res = await fetch('/api/auth/checkAuth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(params)
+      })
+      const data = await res.json()
+      if (data.result.username) {
+        commit('setUser', data.result.username)
+      }
+      return data
+    },
     async logout ({ commit }) {
       try {
         await fetch('/api/auth/logout', {

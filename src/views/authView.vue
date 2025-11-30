@@ -71,20 +71,13 @@ export default {
         this.loading = true
         this.authSuccessful = false
         this.errorForm.auth = ''
-        const res = await fetch('/api/auth/checkAuth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(this.form)
-        })
-        const data = await res.json()
+        const data = await this.$authStore.dispatch('handleLogin', this.form)
         if (data.error) {
           this.errorForm.auth = data.error.message || 'Ошибка сервера'
           return
         }
-        if (data.result) {
+        if (this.$authStore.state.username) {
           this.authSuccessful = true
-          this.$authStore.commit('setUser', data.result.username)
           setTimeout(() => {
             this.$router.push('/')
           }, 3000)
