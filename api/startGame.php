@@ -1,5 +1,4 @@
 <?php
-// Добавить ко всем справочным таблицам префикс sys_
 // TODO прежде всего перебросить признак создателя комнаты из плэйеров в комнату
 // TODO: добавить защиты для входных значений
 // TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE
@@ -57,8 +56,8 @@ function getSessionInfo() {
         from sessions ss
         join session_players sps on sps.session_id = ss.id
         join users us on us.id = sps.user_id
-        join factions fs on fs.id = sps.faction_id
-        join colors cs on cs.id = sps.color_id
+        join ref_factions fs on fs.id = sps.faction_id
+        join ref_colors cs on cs.id = sps.color_id
         where ss.id = ?
         ");
         $stmt->execute([$sessionId]);
@@ -209,7 +208,7 @@ function getFreeFactions() {
         $stmt = $pdo->prepare("
             select 
                 fs.*
-            from factions fs
+            from ref_factions fs
             left join session_players sp on sp.faction_id = fs.id
                 and sp.session_id = ?
             where sp.faction_id is null
@@ -239,7 +238,7 @@ function getFreeColors() {
         $stmt = $pdo->prepare("
             select 
                 cs.*
-            from colors cs
+            from ref_colors cs
             left join session_players sp on sp.color_id = cs.id
                 and sp.session_id = ?
             where sp.color_id is null
