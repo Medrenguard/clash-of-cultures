@@ -1,7 +1,29 @@
 <?php
-// Добавить проверку на авторизацию перед любыми действиями в этом файле вне функций, вытаскивать данные по авторизации на основе auth_token
 // TODO: добавить защиты для входных значений
 // TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE
+// TODO: возможно, вынести этот блок глобально(кроме auth.php)
+try {
+    $curuserId = null;
+    if (isset($_COOKIE['auth_token'])) {
+        $authToken = $_COOKIE['auth_token'];
+        $stmt = $pdo->prepare("
+            SELECT id 
+            FROM users 
+            WHERE auth_token = ?
+        ");
+        $stmt->execute([$authToken]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $curuserId = $user['id'];
+    }
+    if (empty($curuserId)) {
+        throw new Exception("auth error", 1);
+    }
+}
+catch(ex){
+    http_response_code(401);
+    echo json_encode(['error' => 'Access allowed only for registered users']);
+}
+
 if (function_exists(explode('/', $path)[2]) && !str_starts_with(explode('/', $path)[2], '__')) {
     call_user_func(explode('/', $path)[2]);
 } else {
@@ -24,12 +46,13 @@ function getSessionInfo() {
         select 
             ss.name
             ,sps.id 'player_id'
-            ,sps.name 'player_name'
+            ,us.username 'player_name'
             ,sps.ready_for_start
             ,fs.name 'faction_name'
             ,cs.code 'color_code'
         from sessions ss
         join session_players sps on sps.session_id = ss.id
+        join users us on us.id = sps.user_id
         join factions fs on fs.id = sps.faction_id
         join colors cs on cs.id = sps.color_id
         where ss.id = ?
@@ -58,11 +81,10 @@ function getSessionInfo() {
 function createSession() {
     $res = ['error' => null, 'result' => null];
     try {
-        $nickname = trim($_GET['nickname']);
         $factionId = trim($_GET['faction_id']);
         $colorId = trim($_GET['color_id']);
         $sessionName = trim($_GET['session_name']);
-        if (empty($nickname) || empty($sessionName) || empty($factionId) || empty($colorId))
+        if (empty($sessionName) || empty($factionId) || empty($colorId))
         {
             throw new Exception("wrong_param", 1);
         }
@@ -120,10 +142,9 @@ function createSessionPlayer() {
     $res = ['error' => null, 'result' => null];
     try {
         $sessionId = trim($_GET['session_id']);
-        $nickname = trim($_GET['nickname']);
         $factionId = trim($_GET['faction_id']);
         $colorId = trim($_GET['color_id']);
-        if (empty($nickname) || empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
+        if (empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
         {
             throw new Exception("wrong_param", 1);
         }
@@ -141,21 +162,20 @@ function createSessionPlayer() {
 function __createSessionPlayer($data = []) {
     $res = ['error' => null, 'result' => null];
     try {
-        global $pdo;
+        global $pdo, $curuserId;
         // параметр, который нужно прокинуть для отладки
         $echo = $data['echo'] ?? false;
         $sessionId = $data['session_id'];
         $isCreator = $data['is_creator'] ?? 0;
-        $nickname = trim($_GET['nickname']);
         $factionId = trim($_GET['faction_id']);
         $colorId = trim($_GET['color_id']);
-        if (empty($nickname) || empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
+        if (empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
         {
             throw new Exception("wrong_param", 1);
         }
         
-        $stmt = $pdo->prepare("insert into session_players(name, session_id, color_id, faction_id, is_creator) values(?, ?, ?, ?, ?)");
-        $stmt->execute([$nickname, $sessionId, $colorId, $factionId, $isCreator]);
+        $stmt = $pdo->prepare("insert into session_players(user_id, session_id, color_id, faction_id, is_creator) values(?, ?, ?, ?, ?)");
+        $stmt->execute([$curuserId, $sessionId, $colorId, $factionId, $isCreator]);
         $playerId = $pdo->lastInsertId();
         $res['result'] = $playerId;
     }

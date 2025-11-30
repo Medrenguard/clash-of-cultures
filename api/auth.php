@@ -44,7 +44,7 @@ function checkAuth() {
 
         if ($user && password_verify($password, $user['password_hash'])) {
             // Генерируем уникальный токен
-            $authToken = bin2hex(random_bytes(32));
+            $authToken = bin2hex(random_bytes(32)).'_'.$user['id'];
             // Сохраняем токен в базу
             $updateStmt = $pdo->prepare("update users set auth_token = ? where id = ?");
             $updateStmt->execute([$authToken, $user['id']]);

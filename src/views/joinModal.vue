@@ -1,5 +1,5 @@
 <template>
-    <!-- Выпилить никнейм из формы, из БД, заменить его логику на бэке на id юзера -->
+<!-- Запретить повторное присоединение тем же юзером в игру -->
  <!-- TODO: сделать кнопку готовности для гостя(и функцию простановки её), кнопку начала игры(и функцию на бэке), автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника -->
    <!-- Сделать блокировку фракции/цвета, когда всё выбрано -->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
@@ -11,8 +11,6 @@
         <input v-if="!iAmInRoom" type="text" v-model="session_name" id="session_name">
         <div v-else> {{ session_name }} </div>
         <br>
-        <label for="nickname">Никнейм:</label><br>
-        <input type="text" id="nickname" v-model="nickname"><br>
         <label for="faction">Фракция:</label><br>
         <select v-model="faction_id">
           <option v-for="item in factions" :key="item.id" :value="item.id">
@@ -50,7 +48,6 @@ export default {
     return {
       session_name: '',
       session_players: [],
-      nickname: '',
       factions: [],
       faction_id: '',
       colors: [],
@@ -61,6 +58,7 @@ export default {
   mounted () {
     if (this.iAmInRoom) {
       this.redirect_url = window.location.origin + this.$route.params.id
+      // TODO: перенести этот вызов на роут, чтобы делать переадресацию с несуществующей комнаты
       this.getSessionInfo()
     }
     this.getFreeFactions()
@@ -68,7 +66,7 @@ export default {
   },
   computed: {
     cantJoinToRoom () {
-      return !(this.session_name && this.nickname && this.faction_id && this.color_id)
+      return !(this.session_name && this.faction_id && this.color_id)
     },
     iAmInRoom () {
       return this.$route.name === 'game'
@@ -114,7 +112,7 @@ export default {
     },
     async createRoom () {
       try {
-        const res = await fetch('/api/startGame/CreateSession?session_name=' + this.session_name + '&nickname=' + this.nickname + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
+        const res = await fetch('/api/startGame/CreateSession?session_name=' + this.session_name + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
         const data = await res.json()
         this.redirect_url = window.location.origin + data.result.redirect_url
       } catch (error) {
@@ -124,8 +122,8 @@ export default {
     async JoinToRoom () {
       // TODO: возвращает id игрока, но пока никак не обрабатывается. Нужно где-то генерировать ключ или использовать сам этот id для того, чтобы игра узнавала тебя
       try {
-        // const res = await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&nickname=' + this.nickname + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
-        await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&nickname=' + this.nickname + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
+        // const res = await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
+        await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
         // const data = await res.json()
       } catch (error) {
         console.error('Ошибка:', error)
