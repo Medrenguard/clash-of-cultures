@@ -87,8 +87,9 @@ export default {
       } catch (error) {
         console.error('Ошибка:', error)
         this.errorForm.auth = 'Ошибка соединения c сервером'
+      } finally {
+        this.loading = false
       }
-      this.loading = false
     }
   }
 }
