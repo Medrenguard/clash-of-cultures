@@ -1,4 +1,5 @@
 <template>
+  <!-- TODO: добавить общий лоадер при создании комнаты, присоединении к ней и подтверждения готовности -->
  <!-- TODO: сделать функцию на бэке простановки готовности для гостя, кнопку начала игры для хоста(и функцию на бэке), автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника, ограничение присоединения к игре по достижению 4 игроков-->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
    <!-- На будущее: формочка визуально красивая -->
@@ -58,7 +59,7 @@ export default {
     if (this.iAmInRoom) {
       // TODO: перенести этот вызов на роут, чтобы делать переадресацию с несуществующей комнаты сразу, а не после задержки
       await this.getSessionInfo()
-      this.redirect_url = window.location.origin + this.$route.params.id
+      this.redirect_url = window.location.origin + '/game/' + this.$route.params.id
     }
     this.getFreeFactions()
     this.getFreeColors()
@@ -120,7 +121,7 @@ export default {
       try {
         const res = await fetch('/api/startGame/CreateSession?session_name=' + this.session_name + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
         const data = await res.json()
-        this.redirect_url = window.location.origin + data.result.redirect_url
+        window.location.href = '/game/' + data.result.session_id
       } catch (error) {
         console.error('Ошибка:', error)
       }
