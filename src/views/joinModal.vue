@@ -1,5 +1,4 @@
 <template>
-  <!-- TODO: добавить общий лоадер при создании комнаты, присоединении к ней и подтверждения готовности -->
  <!-- TODO: сделать функцию на бэке простановки готовности для гостя, кнопку начала игры для хоста(и функцию на бэке), автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника, ограничение присоединения к игре по достижению 4 игроков-->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
    <!-- На будущее: формочка визуально красивая -->
@@ -52,7 +51,8 @@ export default {
       faction_id: '',
       colors: [],
       color_id: '',
-      redirect_url: ''
+      redirect_url: '',
+      loading: false
     }
   },
   async mounted () {
@@ -66,7 +66,7 @@ export default {
   },
   computed: {
     cantJoinToRoom () {
-      return !(this.session_name && this.faction_id && this.color_id)
+      return !(this.session_name && this.faction_id && this.color_id) || this.loading
     },
     iAmInRoom () {
       return this.$route.name === 'game'
@@ -119,20 +119,22 @@ export default {
     },
     async createRoom () {
       try {
+        this.loading = true
         const res = await fetch('/api/startGame/CreateSession?session_name=' + this.session_name + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
         const data = await res.json()
         window.location.href = '/game/' + data.result.session_id
       } catch (error) {
         console.error('Ошибка:', error)
+        this.loading = false
       }
     },
     async JoinToRoom () {
       // TODO: возвращает id игрока, но пока никак не обрабатывается. Возможно возвращать id не нужно
       try {
-        // const res = await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
+        this.loading = true
         await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
-        this.getSessionInfo()
-        // const data = await res.json()
+        await this.getSessionInfo()
+        this.loading = false
       } catch (error) {
         console.error('Ошибка:', error)
       }
