@@ -1,5 +1,5 @@
 <template>
- <!-- TODO: сделать кнопку начала игры для хоста(и функцию на бэке), автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника(с пояснением), ограничение присоединения к игре по достижению 4 игроков-->
+ <!-- TODO: сделать функцию на фронте и бэке начала игры для хоста, автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника(с пояснением), ограничение присоединения к игре по достижению 4 игроков-->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
    <!-- На будущее: формочка визуально красивая -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
@@ -33,6 +33,8 @@
         <template v-else>
           <button v-if="!meAsPlayer" @click="JoinToRoom" :disabled="cantJoinToRoom">Присоединиться</button>
           <button v-else @click="setReadyPlayer" :disabled="i_am_ready || loading">Подтвердить готовность</button>
+          <br><br>
+          <button v-if="iAmCreator" @click="startGame">Начать игру</button>
           <div v-if="this.redirect_url">
             Ссылка для приглашения друзей =>
           <button @click="copyToClipboardUrl" style="height: 1.5rem">📋 скопировать</button>
@@ -54,6 +56,7 @@ export default {
       color_id: '',
       redirect_url: '',
       i_am_ready: false,
+      creator_username: '',
       loading: false
     }
   },
@@ -75,6 +78,9 @@ export default {
     },
     meAsPlayer () {
       return this.session_players.find((el) => el.name === this.$authStore.state.username)
+    },
+    iAmCreator () {
+      return this.meAsPlayer?.name === this.creator_username
     }
   },
   methods: {
@@ -90,6 +96,7 @@ export default {
         } else {
           this.session_name = data.result.name
           this.session_players = data.result.players
+          this.creator_username = data.result.creator_username
           if (this.meAsPlayer) {
             this.faction_id = this.meAsPlayer.faction_id
             this.color_id = this.meAsPlayer.color_id
@@ -151,6 +158,10 @@ export default {
       } catch (error) {
         console.error('Ошибка:', error)
       }
+    },
+    async startGame () {
+      // тут вызов функции проставления статуса старта игре
+      // еще эта функция должна выполнять переход на новый этап документооборота
     }
   }
 }

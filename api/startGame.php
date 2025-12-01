@@ -45,6 +45,7 @@ function getSessionInfo() {
         $stmt = $pdo->prepare("
         select 
             ss.name
+            ,creator.username 'creator_username'
             ,sps.id 'player_id'
             ,us.username 'player_name'
             ,sps.ready_for_start
@@ -53,6 +54,7 @@ function getSessionInfo() {
             ,cs.id 'color_id'
             ,cs.code 'color_code'
         from sessions ss
+        join users creator on creator.id = ss.creator_user_id
         join session_players sps on sps.session_id = ss.id
         join users us on us.id = sps.user_id
         join ref_factions fs on fs.id = sps.faction_id
@@ -63,6 +65,7 @@ function getSessionInfo() {
         $sessionInfo = $stmt->fetchAll(PDO::FETCH_ASSOC);
         If (count($sessionInfo) == 0) throw new Exception("game_not_found", 1);
         $res['result']['name'] = $sessionInfo[0]['name'];
+        $res['result']['creator_username'] = $sessionInfo[0]['creator_username'];
         foreach ($sessionInfo as $row) {
             $res['result']['players'][] = [
                 'id' => $row['player_id'],
