@@ -255,5 +255,31 @@ function getFreeColors() {
     return $res;
 }
 
+function setReadyPlayer() {
+    $res = ['error' => null, 'result' => false];
+    try {
+        global $pdo, $curuserId;
+        $sessionId = trim($_GET['session_id'] ?? 0);
+        if (!ctype_digit($sessionId))
+        {
+            throw new Exception("wrong_param", 1);
+        }
+        $stmt = $pdo->prepare("
+            set @player_id = (select id from session_players where user_id = ? and session_id = ? limit 1);
+
+            update session_players
+            set ready_for_start = 1
+            where id = @player_id;
+        ");
+        $stmt->execute([$curuserId, $sessionId]);
+        $res['result'] = true;
+    }
+    catch(Exception $ex) {
+        $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
+    }
+    echo json_encode($res);
+    return $res;
+}
+
 ?>
 

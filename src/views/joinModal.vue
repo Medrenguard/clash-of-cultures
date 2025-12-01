@@ -1,5 +1,5 @@
 <template>
- <!-- TODO: сделать функцию на бэке простановки готовности для гостя, кнопку начала игры для хоста(и функцию на бэке), автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника, ограничение присоединения к игре по достижению 4 игроков-->
+ <!-- TODO: сделать кнопку начала игры для хоста(и функцию на бэке), автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника(с пояснением), ограничение присоединения к игре по достижению 4 игроков-->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
    <!-- На будущее: формочка визуально красивая -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
@@ -30,13 +30,14 @@
         </div><br><br>
 
         <button v-if="!iAmInRoom" @click="createRoom" :disabled="cantJoinToRoom">Создать комнату</button>
-        <button v-else-if="iAmInRoom && !meAsPlayer" @click="JoinToRoom" :disabled="cantJoinToRoom">Присоединиться</button>
-        <button v-else @click="iAmReady">Подтвердить готовность</button>
-        <div v-if="this.redirect_url">
-          Ссылка для приглашения друзей =>
+        <template v-else>
+          <button v-if="!meAsPlayer" @click="JoinToRoom" :disabled="cantJoinToRoom">Присоединиться</button>
+          <button v-else @click="setReadyPlayer" :disabled="i_am_ready || loading">Подтвердить готовность</button>
+          <div v-if="this.redirect_url">
+            Ссылка для приглашения друзей =>
           <button @click="copyToClipboardUrl" style="height: 1.5rem">📋 скопировать</button>
         </div>
-
+        </template>
     </div>
 </template>
 
@@ -52,6 +53,7 @@ export default {
       colors: [],
       color_id: '',
       redirect_url: '',
+      i_am_ready: false,
       loading: false
     }
   },
@@ -91,6 +93,7 @@ export default {
           if (this.meAsPlayer) {
             this.faction_id = this.meAsPlayer.faction_id
             this.color_id = this.meAsPlayer.color_id
+            this.i_am_ready = this.meAsPlayer.ready_for_start
           }
         }
       } catch (error) {
@@ -139,8 +142,15 @@ export default {
         console.error('Ошибка:', error)
       }
     },
-    iAmReady () {
-      // тут вызов бэка, проставляющий мне галочку готовности
+    async setReadyPlayer () {
+      try {
+        this.loading = true
+        await fetch('/api/startGame/setReadyPlayer?session_id=' + this.$route.params.id)
+        await this.getSessionInfo()
+        this.loading = false
+      } catch (error) {
+        console.error('Ошибка:', error)
+      }
     }
   }
 }
