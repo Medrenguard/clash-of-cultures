@@ -1,7 +1,6 @@
 <?php
-// TODO прежде всего перебросить признак создателя комнаты из плэйеров в комнату
 // TODO: добавить защиты для входных значений
-// TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE
+// TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE с обычными таблицами и только SELECT для ref_таблиц
 // TODO: возможно, вынести этот блок глобально(кроме auth.php)
 try {
     $curuserId = null;
@@ -99,7 +98,7 @@ function createSession() {
         {
             throw new Exception("error_create_session", 1);
         }
-        $newSessionPlayer = __createSessionPlayer(['session_id' => $newSession['result']['session_id'], 'is_creator' => 1]);
+        $newSessionPlayer = __createSessionPlayer(['session_id' => $newSession['result']['session_id']]);
 
         $res['result'] = [
             'session_id' => $newSession['result']['session_id'], 
@@ -117,7 +116,7 @@ function createSession() {
 function __createSession($data = []) {
     $res = ['error' => null, 'result' => null];
     try {
-        global $pdo;
+        global $pdo, $curuserId;
         // параметр, который нужно прокинуть для отладки
         $echo = $data['echo'] ?? false;
         $sessionName = trim($_GET['session_name']);
@@ -126,8 +125,8 @@ function __createSession($data = []) {
             throw new Exception("wrong_param", 1);
         }
 
-        $stmt = $pdo->prepare("insert into sessions(name) values(?)");
-        $stmt->execute([$sessionName]);
+        $stmt = $pdo->prepare("insert into sessions(name, creator_user_id) values(?, ?)");
+        $stmt->execute([$sessionName, $curuserId]);
         $sessionId = $pdo->lastInsertId();
         
         $res['result'] = [
@@ -154,7 +153,7 @@ function createSessionPlayer() {
             throw new Exception("wrong_param", 1);
         }
 
-        $newSessionPlayer = __createSessionPlayer(['session_id' => $sessionId, 'is_creator' => 0]);
+        $newSessionPlayer = __createSessionPlayer(['session_id' => $sessionId]);
         $res['result'] = $newSessionPlayer;
     }
     catch(Exception $ex) {
@@ -173,7 +172,6 @@ function __createSessionPlayer($data = []) {
         // параметр, который нужно прокинуть для отладки
         $echo = $data['echo'] ?? false;
         $sessionId = $data['session_id'];
-        $isCreator = $data['is_creator'] ?? 0;
         $factionId = trim($_GET['faction_id']);
         $colorId = trim($_GET['color_id']);
         if (empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
@@ -181,8 +179,8 @@ function __createSessionPlayer($data = []) {
             throw new Exception("wrong_param", 1);
         }
         
-        $stmt = $pdo->prepare("insert into session_players(user_id, session_id, color_id, faction_id, is_creator) values(?, ?, ?, ?, ?)");
-        $stmt->execute([$curuserId, $sessionId, $colorId, $factionId, $isCreator]);
+        $stmt = $pdo->prepare("insert into session_players(user_id, session_id, color_id, faction_id) values(?, ?, ?, ?)");
+        $stmt->execute([$curuserId, $sessionId, $colorId, $factionId]);
         $playerId = $pdo->lastInsertId();
         $res['result'] = $playerId;
     }
@@ -195,6 +193,7 @@ function __createSessionPlayer($data = []) {
     return $res;
 }
 
+// TODO: выводить все возможные опции, но отключив уже выбранные кем-то
 function getFreeFactions() {
     $res = ['error' => null, 'result' => []];
     try {
@@ -225,7 +224,7 @@ function getFreeFactions() {
     echo json_encode($res);
     return $res;
 }
-
+// TODO: выводить все возможные опции, но отключив уже выбранные кем-то
 function getFreeColors() {
     $res = ['error' => null, 'result' => []];
     try {
