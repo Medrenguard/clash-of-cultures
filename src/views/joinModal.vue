@@ -180,9 +180,10 @@ export default {
       try {
         this.loading = true
         await this.getSessionInfo()
-        // TODO: добавить проверку на возможность создания комнаты
-        await fetch('/api/startGame/startGame?session_id=' + this.$route.params.id)
-        await this.getSessionInfo()
+        if (this.requirementsArray.length === 0) {
+          await fetch('/api/startGame/startGame?session_id=' + this.$route.params.id)
+          await this.getSessionInfo()
+        }
         this.loading = false
       } catch (error) {
         console.error('Ошибка:', error)
