@@ -8,6 +8,7 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
+    isStarted: false,
     currentCountGamers: 2,
     layoutByCount: {
       regionsCount: null,
@@ -192,6 +193,9 @@ export default new Vuex.Store({
     }
   },
   mutations: {
+    updateIsStarted (state, newValue) {
+      state.isStarted = newValue
+    },
     updateRegionInfo (state, payload) {
       state.regionItemsOnMap.splice(payload.regionNum - 1, 1, payload.info)
     },

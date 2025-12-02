@@ -46,6 +46,7 @@ function getSessionInfo() {
         select 
             ss.name
             ,creator.username 'creator_username'
+            ,ss.is_started
             ,sps.id 'player_id'
             ,us.username 'player_name'
             ,sps.ready_for_start
@@ -66,6 +67,7 @@ function getSessionInfo() {
         If (count($sessionInfo) == 0) throw new Exception("game_not_found", 1);
         $res['result']['name'] = $sessionInfo[0]['name'];
         $res['result']['creator_username'] = $sessionInfo[0]['creator_username'];
+        $res['result']['is_started'] = $sessionInfo[0]['is_started'];
         foreach ($sessionInfo as $row) {
             $res['result']['players'][] = [
                 'id' => $row['player_id'],
@@ -275,7 +277,44 @@ function setReadyPlayer() {
             where id = @player_id;
         ");
         $stmt->execute([$curuserId, $sessionId]);
-        $res['result'] = true;
+        $affectedRows = $stmt->rowCount();
+        if ($affectedRows == 1) {
+            $res['result'] = true;
+        } else {
+            throw new Exception("set_ready_player_error", 1);
+        }
+    }
+    catch(Exception $ex) {
+        $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
+    }
+    echo json_encode($res);
+    return $res;
+}
+
+// TODO: функция должна еще переводить на новый статус документоборота игру или этот статус должен в принципе появляться
+// Документооборот нужно завести
+function startGame() {
+    $res = ['error' => null, 'result' => false];
+    try {
+        global $pdo, $curuserId;
+        $sessionId = trim($_GET['session_id'] ?? 0);
+        if (!ctype_digit($sessionId))
+        {
+            throw new Exception("wrong_param", 1);
+        }
+        $stmt = $pdo->prepare("
+            update sessions
+            set is_started = 1
+            where id = ?
+                and creator_user_id = ?
+        ");
+        $stmt->execute([$sessionId, $curuserId]);
+        $affectedRows = $stmt->rowCount();
+        if ($affectedRows == 1) {
+            $res['result'] = true;
+        } else {
+            throw new Exception("start_game_error", 1);
+        }
     }
     catch(Exception $ex) {
         $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];

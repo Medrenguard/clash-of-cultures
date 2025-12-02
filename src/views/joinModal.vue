@@ -1,5 +1,5 @@
 <template>
- <!-- TODO: сделать функцию на фронте и бэке начала игры для хоста, автообновление статуса комнаты, блокировка старта игры, если не готово хотя бы 2 участника(с пояснением), ограничение присоединения к игре по достижению 4 игроков-->
+ <!-- TODO: блокировка старта игры, если не готово хотя бы 2 участника(с пояснением, фронт/бэк), ограничение присоединения к игре по достижению 4 игроков(фронт/бэк) и если игра уже начата(бэк), автообновление статуса комнаты-->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
    <!-- На будущее: формочка визуально красивая -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
@@ -21,7 +21,6 @@
             {{ item.name }}
           </option>
         </select><br><br>
-        <!-- TODO: пока прячется в комнате. Вообще надо здесь и оставить и делать переадресацию на комнату после связывания юзера через куки -->
         <div v-if="iAmInRoom">
           Уже на поле({{ session_players.length }}/ 4):
           <div v-for="player in session_players" :key="player.id">
@@ -102,6 +101,9 @@ export default {
             this.color_id = this.meAsPlayer.color_id
             this.i_am_ready = this.meAsPlayer.ready_for_start
           }
+          if (data.result.is_started === '1') {
+            this.$store.commit('updateIsStarted', true)
+          }
         }
       } catch (error) {
         console.error('Ошибка:', error)
@@ -160,8 +162,14 @@ export default {
       }
     },
     async startGame () {
-      // тут вызов функции проставления статуса старта игре
-      // еще эта функция должна выполнять переход на новый этап документооборота
+      try {
+        this.loading = true
+        await fetch('/api/startGame/startGame?session_id=' + this.$route.params.id)
+        await this.getSessionInfo()
+        this.loading = false
+      } catch (error) {
+        console.error('Ошибка:', error)
+      }
     }
   }
 }
