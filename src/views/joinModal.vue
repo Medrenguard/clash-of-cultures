@@ -1,5 +1,5 @@
 <template>
- <!-- TODO: блокировка старта игры, если не готово хотя бы 2 участника(с пояснением, фронт/бэк), ограничение присоединения к игре по достижению 4 игроков(фронт/бэк) и если игра уже начата(бэк), автообновление статуса комнаты-->
+ <!-- TODO: по достижению 4 игроков(бэк): ограничение присоединения к игре и если игра уже начата(бэк), блокировка старта игры при превышении кол-ва игроков, автообновление статуса комнаты-->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
    <!-- На будущее: формочка визуально красивая -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
@@ -22,18 +22,25 @@
           </option>
         </select><br><br>
         <div v-if="iAmInRoom">
+          <div>Требования к началу игры:
+            <span v-if="requirementsArray.length === 0"> выполнены!</span>
+            <template v-else>
+              <div v-for="item in requirementsArray" :key="item">- {{ item }}</div>
+            </template>
+          </div>
+          <br>
           Уже на поле({{ session_players.length }}/ 4):
           <div v-for="player in session_players" :key="player.id">
             {{ player.name }} - {{ player.faction_name }} - {{ player.color_code }}. Готовность - {{ player.ready_for_start }}
           </div>
-        </div><br><br>
+        </div><br>
 
         <button v-if="!iAmInRoom" @click="createRoom" :disabled="cantJoinToRoom">Создать комнату</button>
         <template v-else>
           <button v-if="!meAsPlayer" @click="JoinToRoom" :disabled="cantJoinToRoom">Присоединиться</button>
           <button v-else @click="setReadyPlayer" :disabled="i_am_ready || loading">Подтвердить готовность</button>
           <br><br>
-          <button v-if="iAmCreator" @click="startGame">Начать игру</button>
+          <button v-if="iAmCreator" @click="startGame" :disabled="requirementsArray.length > 0">Начать игру</button>
           <div v-if="this.redirect_url">
             Ссылка для приглашения друзей =>
           <button @click="copyToClipboardUrl" style="height: 1.5rem">📋 скопировать</button>
@@ -80,6 +87,14 @@ export default {
     },
     iAmCreator () {
       return this.meAsPlayer?.name === this.creator_username
+    },
+    requirementsArray () {
+      const res = []
+      const readyPlayersCount = this.session_players.filter((el) => el.ready_for_start).length
+      if (this.session_players.length < 2) res.push('Необходимо хотя бы 2 игрока')
+      if (readyPlayersCount < this.session_players.length) res.push('Все игроки в лобби должны быть готовы')
+      if (this.session_players.length > 4) res.push('Комната перегружена. Обратитесь к администратору')
+      return res
     }
   },
   methods: {

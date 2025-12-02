@@ -74,7 +74,7 @@ function getSessionInfo() {
             $res['result']['players'][] = [
                 'id' => $row['player_id'],
                 'name' => $row['player_name'],
-                'ready_for_start' => $row['ready_for_start'],
+                'ready_for_start' => !!$row['ready_for_start'],
                 'faction_id' => $row['faction_id'],
                 'faction_name' => $row['faction_name'],
                 'color_id' => $row['color_id'],
