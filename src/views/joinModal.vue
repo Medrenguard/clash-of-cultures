@@ -101,7 +101,7 @@ export default {
             this.color_id = this.meAsPlayer.color_id
             this.i_am_ready = this.meAsPlayer.ready_for_start
           }
-          if (data.result.is_started === '1') {
+          if (data.result.is_started) {
             this.$store.commit('updateIsStarted', true)
           }
         }
@@ -164,6 +164,8 @@ export default {
     async startGame () {
       try {
         this.loading = true
+        await this.getSessionInfo()
+        // TODO: добавить проверку на возможность создания комнаты
         await fetch('/api/startGame/startGame?session_id=' + this.$route.params.id)
         await this.getSessionInfo()
         this.loading = false
