@@ -1,5 +1,5 @@
 <template>
- <!-- TODO: по достижению 4 игроков(бэк): ограничение присоединения к игре и если игра уже начата(бэк), блокировка старта игры при превышении кол-ва игроков, автообновление статуса комнаты-->
+ <!-- TODO: автообновление статуса комнаты, попапы с ошибками -->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
    <!-- На будущее: формочка визуально красивая -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
@@ -105,7 +105,7 @@ export default {
       try {
         const res = await fetch('/api/startGame/getSessionInfo?session_id=' + this.$route.params.id)
         const data = await res.json()
-        if (data.error && data.error.message === 'game_not_found') {
+        if (data.error && data.error.message === 'Игра не найдена') {
           window.location.href = window.location.origin
         } else {
           this.session_name = data.result.name
@@ -161,6 +161,8 @@ export default {
         this.loading = true
         await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
         await this.getSessionInfo()
+        this.getFreeFactions()
+        this.getFreeColors()
         this.loading = false
       } catch (error) {
         console.error('Ошибка:', error)

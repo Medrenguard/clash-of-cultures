@@ -16,12 +16,12 @@ try {
         $curuserId = $user['id'];
     }
     if (empty($curuserId)) {
-        throw new Exception("auth error", 1);
+        throw new Exception("Ошибка аутентификации", 1);
     }
 }
 catch(ex){
     http_response_code(401);
-    echo json_encode(['error' => 'Access allowed only for registered users']);
+    echo json_encode(['error' => 'Доступ только для зарегистрированных пользователей']);
 }
 
 if (function_exists(explode('/', $path)[2]) && !str_starts_with(explode('/', $path)[2], '__')) {
@@ -29,7 +29,7 @@ if (function_exists(explode('/', $path)[2]) && !str_starts_with(explode('/', $pa
 } else {
     // 404 - маршрут не найден
     http_response_code(404);
-    echo json_encode(['error' => 'Function/route not found']);
+    echo json_encode(['error' => 'Функция/роут не найдены']);
 }
 
 function getSessionInfo() {
@@ -39,7 +39,7 @@ function getSessionInfo() {
         $sessionId = trim($_GET['session_id']);
         if (empty($sessionId) || !ctype_digit($sessionId))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
 
         $stmt = $pdo->prepare("
@@ -64,7 +64,7 @@ function getSessionInfo() {
         ");
         $stmt->execute([$sessionId]);
         $sessionInfo = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        If (count($sessionInfo) == 0) throw new Exception("game_not_found", 1);
+        If (count($sessionInfo) == 0) throw new Exception("Игра не найдена", 1);
         $res['result'] = [
             'name'=> $sessionInfo[0]['name'],
             'creator_username' => $sessionInfo[0]['creator_username'],
@@ -97,13 +97,13 @@ function createSession() {
         $sessionName = trim($_GET['session_name']);
         if (empty($sessionName) || empty($factionId) || empty($colorId))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
 
         $newSession = __createSession();
         if (empty($newSession['result']))
         {
-            throw new Exception("error_create_session", 1);
+            throw new Exception("Ошибка создания сессии", 1);
         }
         $newSessionPlayer = __createSessionPlayer(['session_id' => $newSession['result']['session_id']]);
 
@@ -129,7 +129,7 @@ function __createSession($data = []) {
         $sessionName = trim($_GET['session_name']);
         if (empty($sessionName))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
 
         $stmt = $pdo->prepare("insert into sessions(name, creator_user_id) values(?, ?)");
@@ -157,7 +157,7 @@ function createSessionPlayer() {
         $colorId = trim($_GET['color_id']);
         if (empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
 
         $newSessionPlayer = __createSessionPlayer(['session_id' => $sessionId]);
@@ -169,8 +169,6 @@ function createSessionPlayer() {
     echo json_encode($res);
     return $res;
 }
-// TODO: перед созданием проверить, что выбранная фракция и цвет всё еще доступны. Если нет - вернуть читаемую ошибку на фронт о том,
-// что фракция/цвет более недоступна и обновить там список
 // В теории можно оставить до подключения веб-сокетов 
 function __createSessionPlayer($data = []) {
     $res = ['error' => null, 'result' => null];
@@ -183,9 +181,60 @@ function __createSessionPlayer($data = []) {
         $colorId = trim($_GET['color_id']);
         if (empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
         
+        // проверка максимального количества игроков и статуса игры
+        $checkStmt = $pdo->prepare("
+            select 
+                s.is_started,
+                count(sp.id) as players_count
+            from sessions s
+            left join session_players sp on sp.session_id = s.id
+            where s.id = ?
+            group by s.id
+        ");
+        $checkStmt->execute([$sessionId]);
+        $sessionData = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$sessionData) {
+            throw new Exception("Сессия не найдена", 1);
+        }
+        
+        if (!!$sessionData['is_started']) {
+            throw new Exception("Игра уже начата, нельзя присоединиться", 1);
+        }
+        
+        if ($sessionData['players_count'] >= 4) {
+            throw new Exception("В комнате уже максимальное количество игроков (4)", 1);
+        }
+        
+        // проверка, не участвует ли уже пользователь
+        $playerExistsStmt = $pdo->prepare("select id from session_players where user_id = ? and session_id = ?");
+        $playerExistsStmt->execute([$curuserId, $sessionId]);
+        
+        if ($playerExistsStmt->fetch()) {
+            throw new Exception("Вы уже участвуете в этой игре", 1);
+        }
+        
+        // проверка занятости фракции и цвета
+        $occupiedStmt = $pdo->prepare("
+            select 
+                (select id from session_players where session_id = ? and faction_id = ?) as occupied_faction,
+                (select id from session_players where session_id = ? and color_id = ?) as occupied_color
+        ");
+        $occupiedStmt->execute([$sessionId, $factionId, $sessionId, $colorId]);
+        $occupied = $occupiedStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($occupied['occupied_faction']) {
+            throw new Exception("Эта фракция уже занята другим игроком", 1);
+        }
+        
+        if ($occupied['occupied_color']) {
+            throw new Exception("Этот цвет уже занят другим игроком", 1);
+        }
+        
+        // все проверки пройдены - создаем игрока
         $stmt = $pdo->prepare("insert into session_players(user_id, session_id, color_id, faction_id) values(?, ?, ?, ?)");
         $stmt->execute([$curuserId, $sessionId, $colorId, $factionId]);
         $playerId = $pdo->lastInsertId();
@@ -208,7 +257,7 @@ function getFreeFactions() {
         $sessionId = trim($_GET['session_id'] ?? 0);
         if (!ctype_digit($sessionId))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
 
         $stmt = $pdo->prepare("
@@ -239,7 +288,7 @@ function getFreeColors() {
         $sessionId = trim($_GET['session_id'] ?? 0);
         if (!ctype_digit($sessionId))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
         $stmt = $pdo->prepare("
             select 
@@ -269,7 +318,7 @@ function setReadyPlayer() {
         $sessionId = trim($_GET['session_id'] ?? 0);
         if (!ctype_digit($sessionId))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
         $stmt = $pdo->prepare("
             set @player_id = (select id from session_players where user_id = ? and session_id = ? limit 1);
@@ -283,7 +332,7 @@ function setReadyPlayer() {
         if ($affectedRows == 1) {
             $res['result'] = true;
         } else {
-            throw new Exception("set_ready_player_error", 1);
+            throw new Exception("Ошибка установки готовности игрока", 1);
         }
     }
     catch(Exception $ex) {
@@ -302,20 +351,25 @@ function startGame() {
         $sessionId = trim($_GET['session_id'] ?? 0);
         if (!ctype_digit($sessionId))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
         $stmt = $pdo->prepare("
+            set @players_count = (select count(*) from session_players sps where sps.session_id = ?);
+            set @ready_players_count = (select count(*) from session_players sps where sps.session_id = ? and sps.ready_for_start = 1);
+
             update sessions
             set is_started = 1
             where id = ?
                 and creator_user_id = ?
+                and @players_count between 2 and 4
+                and @ready_players_count = @players_count
         ");
-        $stmt->execute([$sessionId, $curuserId]);
+        $stmt->execute([$sessionId, $sessionId, $sessionId, $curuserId]);
         $affectedRows = $stmt->rowCount();
         if ($affectedRows == 1) {
             $res['result'] = true;
         } else {
-            throw new Exception("start_game_error", 1);
+            throw new Exception("Ошибка старта игры", 1);
         }
     }
     catch(Exception $ex) {

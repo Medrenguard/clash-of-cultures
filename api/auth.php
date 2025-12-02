@@ -27,7 +27,7 @@ function checkAuth() {
         $password = $data['password'] ?? '';
         if (empty($username) || empty($password))
         {
-            throw new Exception("wrong_param", 1);
+            throw new Exception("Неверный параметр", 1);
         }
         global $pdo;
         $stmt = $pdo->prepare("
