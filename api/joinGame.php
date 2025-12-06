@@ -1,47 +1,14 @@
 <?php
 // TODO: добавить защиты для входных значений
 // TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE с обычными таблицами и только SELECT для ref_таблиц
-// TODO: возможно, вынести этот блок глобально(кроме auth.php)
-try {
-    $curuserId = null;
-    if (isset($_COOKIE['auth_token'])) {
-        $authToken = $_COOKIE['auth_token'];
-        $stmt = $pdo->prepare("
-            SELECT id 
-            FROM users 
-            WHERE auth_token = ?
-        ");
-        $stmt->execute([$authToken]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        $curuserId = $user['id'];
-    }
-    if (empty($curuserId)) {
-        throw new Exception("Ошибка аутентификации", 1);
-    }
-}
-catch(ex){
-    http_response_code(401);
-    echo json_encode(['error' => 'Доступ только для зарегистрированных пользователей']);
-}
-
-if (function_exists(explode('/', $path)[2]) && !str_starts_with(explode('/', $path)[2], '__')) {
-    call_user_func(explode('/', $path)[2]);
-} else {
-    // 404 - маршрут не найден
-    http_response_code(404);
-    echo json_encode(['error' => 'Функция/роут не найдены']);
-}
+require_once 'globals/cookie/curuser.php';
+require_once 'globals/get/cursession.php';
+require_once 'globals/routing.php';
 
 function getSessionInfo() {
     $res = ['error' => null, 'result' => ['name' => null, 'players' => []]];
     try {
-        global $pdo;
-        $sessionId = trim($_GET['session_id']);
-        if (empty($sessionId) || !ctype_digit($sessionId))
-        {
-            throw new Exception("Неверный параметр", 1);
-        }
-
+        global $pdo, $cursession;
         $stmt = $pdo->prepare("
         select 
             ss.name
@@ -62,9 +29,9 @@ function getSessionInfo() {
         join ref_colors cs on cs.id = sps.color_id
         where ss.id = ?
         ");
-        $stmt->execute([$sessionId]);
+        $stmt->execute([$cursession["id"]]);
         $sessionInfo = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        If (count($sessionInfo) == 0) throw new Exception("Игра не найдена", 1);
+        If (count($sessionInfo) == 0) throw new Exception("Сессия не найдена", 1);
         $res['result'] = [
             'name'=> $sessionInfo[0]['name'],
             'creator_username' => $sessionInfo[0]['creator_username'],
@@ -89,78 +56,18 @@ function getSessionInfo() {
     return $res;
 }
 
-function createSession() {
-    $res = ['error' => null, 'result' => null];
-    try {
-        $factionId = trim($_GET['faction_id']);
-        $colorId = trim($_GET['color_id']);
-        $sessionName = trim($_GET['session_name']);
-        if (empty($sessionName) || empty($factionId) || empty($colorId))
-        {
-            throw new Exception("Неверный параметр", 1);
-        }
-
-        $newSession = __createSession();
-        if (empty($newSession['result']))
-        {
-            throw new Exception("Ошибка создания сессии", 1);
-        }
-        $newSessionPlayer = __createSessionPlayer(['session_id' => $newSession['result']['session_id']]);
-
-        $res['result'] = [
-            'session_id' => $newSession['result']['session_id'], 
-            'redirect_url' => '/game/' . $newSession['result']['session_id'],
-            'player_id' => $newSessionPlayer['result']
-        ];
-    }
-    catch(Exception $ex) {
-        $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
-    }
-    echo json_encode($res);
-    return $res;
-}
-
-function __createSession($data = []) {
-    $res = ['error' => null, 'result' => null];
-    try {
-        global $pdo, $curuserId;
-        // параметр, который нужно прокинуть для отладки
-        $echo = $data['echo'] ?? false;
-        $sessionName = trim($_GET['session_name']);
-        if (empty($sessionName))
-        {
-            throw new Exception("Неверный параметр", 1);
-        }
-
-        $stmt = $pdo->prepare("insert into sessions(name, creator_user_id) values(?, ?)");
-        $stmt->execute([$sessionName, $curuserId]);
-        $sessionId = $pdo->lastInsertId();
-        
-        $res['result'] = [
-            'session_id' => $sessionId
-        ];
-    }
-    catch(Exception $ex) {
-        $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
-    }
-    if ($echo) {
-        echo json_encode($res);
-    }
-    return $res;
-}
-
 function createSessionPlayer() {
     $res = ['error' => null, 'result' => null];
     try {
-        $sessionId = trim($_GET['session_id']);
+        global $cursession;
         $factionId = trim($_GET['faction_id']);
         $colorId = trim($_GET['color_id']);
-        if (empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
+        if (empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
         {
             throw new Exception("Неверный параметр", 1);
         }
 
-        $newSessionPlayer = __createSessionPlayer(['session_id' => $sessionId]);
+        $newSessionPlayer = __createSessionPlayer(['session_id'=> $cursession['id'], 'faction_id'=> $factionId,'color_id'=> $colorId]);
         $res['result'] = $newSessionPlayer;
     }
     catch(Exception $ex) {
@@ -169,16 +76,16 @@ function createSessionPlayer() {
     echo json_encode($res);
     return $res;
 }
-// В теории можно оставить до подключения веб-сокетов 
+
 function __createSessionPlayer($data = []) {
     $res = ['error' => null, 'result' => null];
     try {
         global $pdo, $curuserId;
         // параметр, который нужно прокинуть для отладки
         $echo = $data['echo'] ?? false;
-        $sessionId = $data['session_id'];
-        $factionId = trim($_GET['faction_id']);
-        $colorId = trim($_GET['color_id']);
+        $sessionId = (string)$data['session_id'];
+        $factionId = $data['faction_id'];
+        $colorId = $data['color_id'];
         if (empty($sessionId) || !ctype_digit($sessionId) || empty($factionId) || !ctype_digit($factionId) || empty($colorId) || !ctype_digit($colorId))
         {
             throw new Exception("Неверный параметр", 1);
@@ -253,13 +160,7 @@ function __createSessionPlayer($data = []) {
 function getFreeFactions() {
     $res = ['error' => null, 'result' => []];
     try {
-        global $pdo, $curuserId;
-        $sessionId = trim($_GET['session_id'] ?? 0);
-        if (!ctype_digit($sessionId))
-        {
-            throw new Exception("Неверный параметр", 1);
-        }
-
+        global $pdo, $curuserId, $cursession;
         $stmt = $pdo->prepare("
             select 
                 fs.*
@@ -270,7 +171,7 @@ function getFreeFactions() {
                 or sp.user_id = ?
             order by fs.id
         ");
-        $stmt->execute([$sessionId, $curuserId]);
+        $stmt->execute([$cursession['id'], $curuserId]);
         $factions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $res['result'] = $factions;
     }
@@ -284,12 +185,7 @@ function getFreeFactions() {
 function getFreeColors() {
     $res = ['error' => null, 'result' => []];
     try {
-        global $pdo, $curuserId;
-        $sessionId = trim($_GET['session_id'] ?? 0);
-        if (!ctype_digit($sessionId))
-        {
-            throw new Exception("Неверный параметр", 1);
-        }
+        global $pdo, $curuserId, $cursession;
         $stmt = $pdo->prepare("
             select 
                 cs.*
@@ -300,7 +196,7 @@ function getFreeColors() {
                     or sp.user_id = ?
             order by cs.id
         ");
-        $stmt->execute([$sessionId, $curuserId]);
+        $stmt->execute([$cursession['id'], $curuserId]);
         $colors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $res['result'] = $colors;
     }
@@ -314,12 +210,7 @@ function getFreeColors() {
 function setReadyPlayer() {
     $res = ['error' => null, 'result' => false];
     try {
-        global $pdo, $curuserId;
-        $sessionId = trim($_GET['session_id'] ?? 0);
-        if (!ctype_digit($sessionId))
-        {
-            throw new Exception("Неверный параметр", 1);
-        }
+        global $pdo, $curuserId, $cursession;
         $stmt = $pdo->prepare("
             set @player_id = (select id from session_players where user_id = ? and session_id = ? limit 1);
 
@@ -327,13 +218,8 @@ function setReadyPlayer() {
             set ready_for_start = 1
             where id = @player_id;
         ");
-        $stmt->execute([$curuserId, $sessionId]);
-        $affectedRows = $stmt->rowCount();
-        if ($affectedRows == 1) {
-            $res['result'] = true;
-        } else {
-            throw new Exception("Ошибка установки готовности игрока", 1);
-        }
+        $stmt->execute([$curuserId, $cursession["id"]]);
+        $res['result'] = true;
     }
     catch(Exception $ex) {
         $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];
@@ -348,10 +234,9 @@ function setReadyPlayer() {
 function startGame() {
     $res = ['error' => null, 'result' => false];
     try {
-        global $pdo, $curuserId;
-        $sessionId = trim($_GET['session_id'] ?? 0);
+        global $pdo, $curuserId, $cursession;
         $firstPlayer = $_GET['first_player'] ?? null;
-        if (!ctype_digit($sessionId) || ($firstPlayer != null && !ctype_digit($firstPlayer)))
+        if ($firstPlayer != null && !ctype_digit($firstPlayer))
         {
             throw new Exception("Неверный параметр", 1);
         }
@@ -383,13 +268,8 @@ function startGame() {
                 and @players_count between 2 and 4
                 and @ready_players_count = @players_count
         ");
-        $stmt->execute([$sessionId, $firstPlayer, $curuserId]);
-        $affectedRows = $stmt->rowCount();
-        if ($affectedRows == 1) {
-            $res['result'] = true;
-        } else {
-            throw new Exception("Ошибка старта игры", 1);
-        }
+        $stmt->execute([$cursession['id'], $firstPlayer, $curuserId]);
+        $res['result'] = true;
     }
     catch(Exception $ex) {
         $res['error'] = ['message' => $ex->getMessage(), 'line' => $ex->getLine(), 'file' => $ex->getFile()];

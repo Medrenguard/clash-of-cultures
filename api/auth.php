@@ -1,13 +1,7 @@
 <?php
 // TODO: добавить защиты для входных значений
 // TODO: МБ добавить отдельного технического юзера для работы с базой, без суперправ, только INSERT, SELECT, UPDATE
-if (function_exists(explode('/', $path)[2])) {
-    call_user_func(explode('/', $path)[2]);
-} else {
-    // 404 - маршрут не найден
-    http_response_code(404);
-    echo json_encode(['error' => 'Function/route not found']);
-}
+require_once 'globals/routing.php';
 
 function checkAuth() {
     $res = [

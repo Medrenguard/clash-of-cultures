@@ -117,9 +117,9 @@ export default {
     },
     async getSessionInfo () {
       try {
-        const res = await fetch('/api/startGame/getSessionInfo?session_id=' + this.$route.params.id)
+        const res = await fetch('/api/joinGame/getSessionInfo?session_id=' + this.$route.params.id)
         const data = await res.json()
-        if (data.error && data.error.message === 'Игра не найдена') {
+        if (data.error && data.error.message === 'Сессия не найдена') {
           window.location.href = window.location.origin
         } else {
           this.session_name = data.result.name
@@ -140,8 +140,8 @@ export default {
     },
     async getFreeFactions () {
       try {
-        const params = this.iAmInRoom ? `?session_id=${this.$route.params.id}` : ''
-        const res = await fetch('/api/startGame/getFreeFactions' + params)
+        const endpoint = this.iAmInRoom ? `joinGame/getFreeFactions?session_id=${this.$route.params.id}` : 'createRoom/getFactions'
+        const res = await fetch('/api/' + endpoint)
         const data = await res.json()
         this.factions = data.result
       } catch (error) {
@@ -150,8 +150,8 @@ export default {
     },
     async getFreeColors () {
       try {
-        const params = this.iAmInRoom ? `?session_id=${this.$route.params.id}` : ''
-        const res = await fetch('/api/startGame/getFreeColors' + params)
+        const endpoint = this.iAmInRoom ? `joinGame/getFreeColors?session_id=${this.$route.params.id}` : 'createRoom/getColors'
+        const res = await fetch('/api/' + endpoint)
         const data = await res.json()
         this.colors = data.result
       } catch (error) {
@@ -161,7 +161,7 @@ export default {
     async createRoom () {
       try {
         this.loading = true
-        const res = await fetch('/api/startGame/CreateSession?session_name=' + this.session_name + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
+        const res = await fetch('/api/createRoom/CreateSession?session_name=' + this.session_name + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
         const data = await res.json()
         window.location.href = '/game/' + data.result.session_id
       } catch (error) {
@@ -173,7 +173,7 @@ export default {
       // TODO: возвращает id игрока, но пока никак не обрабатывается. Возможно возвращать id не нужно
       try {
         this.loading = true
-        await fetch('/api/startGame/createSessionPlayer?session_id=' + this.$route.params.id + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
+        await fetch('/api/joinGame/createSessionPlayer?session_id=' + this.$route.params.id + '&faction_id=' + this.faction_id + '&color_id=' + this.color_id)
         await this.getSessionInfo()
         this.getFreeFactions()
         this.getFreeColors()
@@ -185,7 +185,7 @@ export default {
     async setReadyPlayer () {
       try {
         this.loading = true
-        await fetch('/api/startGame/setReadyPlayer?session_id=' + this.$route.params.id)
+        await fetch('/api/joinGame/setReadyPlayer?session_id=' + this.$route.params.id)
         await this.getSessionInfo()
         this.loading = false
       } catch (error) {
@@ -198,7 +198,7 @@ export default {
         await this.getSessionInfo()
         if (this.requirementsArray.length === 0) {
           const params = this.selected_player_id ? `&first_player=${this.selected_player_id}` : ''
-          await fetch('/api/startGame/startGame?session_id=' + this.$route.params.id + params)
+          await fetch('/api/joinGame/startGame?session_id=' + this.$route.params.id + params)
           await this.getSessionInfo()
         }
         this.loading = false
