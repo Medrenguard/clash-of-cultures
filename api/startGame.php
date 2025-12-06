@@ -344,27 +344,46 @@ function setReadyPlayer() {
 
 // TODO: функция должна еще переводить на новый статус документоборота игру или этот статус должен в принципе появляться
 // Документооборот нужно завести
+// TODO: работает правильно, но можно оптимизировать
 function startGame() {
     $res = ['error' => null, 'result' => false];
     try {
         global $pdo, $curuserId;
         $sessionId = trim($_GET['session_id'] ?? 0);
-        if (!ctype_digit($sessionId))
+        $firstPlayer = $_GET['first_player'] ?? null;
+        if (!ctype_digit($sessionId) || ($firstPlayer != null && !ctype_digit($firstPlayer)))
         {
             throw new Exception("Неверный параметр", 1);
         }
         $stmt = $pdo->prepare("
-            set @players_count = (select count(*) from session_players sps where sps.session_id = ?);
-            set @ready_players_count = (select count(*) from session_players sps where sps.session_id = ? and sps.ready_for_start = 1);
+            set @session_id = ?;
+            set @first_player = (
+                select
+                    coalesce(selected_player.id, default_player.id) as id
+                from sessions ss
+                join users us on us.id = ss.creator_user_id
+                join session_players default_player on default_player.user_id = us.id
+                left join lateral (
+                    select sps.id 
+                    from session_players sps
+                    where sps.session_id = @session_id 
+                        and sps.id = ?
+                ) selected_player on true
+                where ss.id = @session_id
+            );
+            set @players_count = (select count(*) from session_players sps where sps.session_id = @session_id);
+            set @ready_players_count = (select count(*) from session_players sps where sps.session_id = @session_id and sps.ready_for_start = 1);
 
             update sessions
-            set is_started = 1
-            where id = ?
+            set
+                is_started = 1
+                ,first_player_id = @first_player
+            where id = @session_id
                 and creator_user_id = ?
                 and @players_count between 2 and 4
                 and @ready_players_count = @players_count
         ");
-        $stmt->execute([$sessionId, $sessionId, $sessionId, $curuserId]);
+        $stmt->execute([$sessionId, $firstPlayer, $curuserId]);
         $affectedRows = $stmt->rowCount();
         if ($affectedRows == 1) {
             $res['result'] = true;

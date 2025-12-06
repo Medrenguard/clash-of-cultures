@@ -1,6 +1,5 @@
 <template>
  <!-- TODO: автообновление статуса комнаты, попапы с ошибками -->
-  <!-- Выбор первого игрока: сделать выбор на фронте(по умолчанию - хост), поле в базе, функцию на бэке -->
    <!-- На будущее: выбор цвета визуальный и украшательства: иконки фракций, точки статуса готовности -->
    <!-- На будущее: формочка визуально красивая -->
    <!-- На далёкое будущее: выведение особенностей выбираемой фракции -->
@@ -30,10 +29,21 @@
             </template>
           </div>
           <br>
-          Уже на поле({{ session_players.length }}/ 4):
-          <div v-for="player in session_players" :key="player.id">
-            {{ player.name }} - {{ player.faction_name }} - {{ player.color_code }}. Готовность - {{ player.ready_for_start }}
-          </div>
+          <template v-if="iAmCreator">
+            Готовы к игре {{ readyPlayers.length }} из {{ session_players.length }}. Выберите первого игрока:
+            <div v-for="player in session_players" :key="player.name">
+              <input type="radio" name="firstPlayerSelection" :id="player.name" :value="player.id" v-model="selected_player_id" :disabled="!player.ready_for_start">
+              <label :for="player.name">
+                {{ player.name }} - {{ player.faction_name }} - {{ player.color_code }}. Готовность - {{ player.ready_for_start }}
+              </label>
+            </div>
+          </template>
+          <template v-else>
+            Готовы к игре {{ readyPlayers.length }} из {{ session_players.length }}:
+            <div v-for="player in session_players" :key="player.id">
+              {{ player.name }} - {{ player.faction_name }} - {{ player.color_code }}. Готовность - {{ player.ready_for_start }}
+            </div>
+          </template>
         </div><br>
 
         <button v-if="!iAmInRoom" @click="createRoom" :disabled="cantJoinToRoom">Создать комнату</button>
@@ -64,6 +74,7 @@ export default {
       redirect_url: '',
       i_am_ready: false,
       creator_username: '',
+      selected_player_id: 0,
       loading: false
     }
   },
@@ -89,11 +100,13 @@ export default {
     iAmCreator () {
       return this.meAsPlayer?.name === this.creator_username
     },
+    readyPlayers () {
+      return this.session_players.filter((el) => el.ready_for_start)
+    },
     requirementsArray () {
       const res = []
-      const readyPlayersCount = this.session_players.filter((el) => el.ready_for_start).length
       if (this.session_players.length < 2) res.push('Необходимо хотя бы 2 игрока')
-      if (readyPlayersCount < this.session_players.length) res.push('Все игроки в лобби должны быть готовы')
+      if (this.readyPlayers.length < this.session_players.length) res.push('Все игроки в лобби должны быть готовы')
       if (this.session_players.length > 4) res.push('Комната перегружена. Обратитесь к администратору')
       return res
     }
@@ -184,7 +197,8 @@ export default {
         this.loading = true
         await this.getSessionInfo()
         if (this.requirementsArray.length === 0) {
-          await fetch('/api/startGame/startGame?session_id=' + this.$route.params.id)
+          const params = this.selected_player_id ? `&first_player=${this.selected_player_id}` : ''
+          await fetch('/api/startGame/startGame?session_id=' + this.$route.params.id + params)
           await this.getSessionInfo()
         }
         this.loading = false
