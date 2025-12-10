@@ -248,6 +248,7 @@ function startGame() {
                 from sessions ss
                 join users us on us.id = ss.creator_user_id
                 join session_players default_player on default_player.user_id = us.id
+                    and default_player.session_id = ss.id
                 left join lateral (
                     select sps.id 
                     from session_players sps

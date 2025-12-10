@@ -80,7 +80,7 @@ export default {
           this.authSuccessful = true
           setTimeout(() => {
             this.$router.push('/')
-          }, 3000)
+          }, 1500)
         } else {
           this.errorForm.auth = 'Неверное имя пользователя или пароль'
         }
