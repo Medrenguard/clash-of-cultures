@@ -156,7 +156,7 @@ function __createSessionPlayer($data = []) {
     return $res;
 }
 
-// TODO: выводить все возможные опции, но отключив уже выбранные кем-то
+// TODO: выводить все возможные опции, но отключив уже выбранные кем-то(сейчас выводятся не все, а только свободные)
 function getFreeFactions() {
     $res = ['error' => null, 'result' => []];
     try {
@@ -181,7 +181,7 @@ function getFreeFactions() {
     echo json_encode($res);
     return $res;
 }
-// TODO: выводить все возможные опции, но отключив уже выбранные кем-то
+// TODO: выводить все возможные опции, но отключив уже выбранные кем-то(сейчас выводятся не все, а только свободные)
 function getFreeColors() {
     $res = ['error' => null, 'result' => []];
     try {
